@@ -333,11 +333,102 @@ tbody td { padding:10px 14px; vertical-align:middle; }
 .log-device{ font-size:10px; color:#bbb; }
 .log-empty { padding:20px; text-align:center; color:#ccc; font-size:12px; }
 
+/* ── 내원 현황 ── */
+:root { --purple:#7e57c2; --purple-light:#ede7f6; --purple-border:#b39ddb; }
+.visit-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+.visit-month-nav { display:flex; align-items:center; gap:8px; }
+.visit-month-btn { background:white; border:1px solid var(--border); border-radius:8px; padding:5px 12px; cursor:pointer; font-size:13px; font-weight:600; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.visit-month-btn:hover { border-color:var(--purple-border); color:var(--purple); }
+.visit-month-label { font-size:15px; font-weight:700; color:var(--text); min-width:100px; text-align:center; }
+
+/* 드래그 입력 테이블 */
+.visit-table-wrap { background:white; border-radius:14px; border:1px solid var(--border); overflow:hidden; margin-bottom:16px; }
+.visit-table { width:100%; border-collapse:collapse; font-size:13px; }
+.visit-table thead th { padding:10px 12px; background:#fafafa; border-bottom:2px solid var(--border); font-size:11px; font-weight:700; color:var(--muted); text-align:center; }
+.visit-table thead th:first-child { text-align:left; }
+.visit-table tbody tr { border-bottom:1px solid #f5f5f8; transition:background 0.1s; }
+.visit-table tbody tr:hover { background:#faf8ff; }
+.visit-table tbody tr.weekend { background:#fafafa; }
+.visit-table tbody td { padding:6px 8px; text-align:center; vertical-align:middle; }
+.visit-table tbody td:first-child { text-align:left; padding-left:14px; font-size:12px; color:var(--muted); font-weight:600; }
+.visit-table tbody td.sun-col { color:#e05060; }
+.visit-table tbody td.sat-col { color:var(--teal); }
+
+/* 드래그 입력 셀 */
+.drag-cell { position:relative; height:32px; min-width:80px; cursor:ns-resize; user-select:none; border-radius:6px; overflow:hidden; background:#f8f5ff; }
+.drag-cell-bar { position:absolute; bottom:0; left:0; right:0; background:var(--purple); border-radius:6px 6px 0 0; transition:height 0.05s; min-height:2px; }
+.drag-cell-bar.visit-bar { background:#4a7fe5; }
+.drag-cell-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--text); z-index:1; }
+.drag-cell:active { cursor:ns-resize; }
+.drag-cell.dragging .drag-cell-bar { transition:none; }
+
+/* 내원율 배지 */
+.rate-badge { display:inline-block; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:700; }
+.rate-high   { background:#e8f5e9; color:#388e3c; }
+.rate-mid    { background:#fff8e1; color:#e07000; }
+.rate-low    { background:#fde8e8; color:#c62828; }
+.rate-none   { background:#f5f5f5; color:#aaa; }
+
+/* 범례 */
+.visit-legend { display:flex; gap:16px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
+.legend-dot { width:10px; height:10px; border-radius:3px; }
+
+/* 통계 카드 */
+.visit-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:16px; }
+.visit-stat-card { background:white; border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+.visit-stat-label { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:4px; }
+.visit-stat-value { font-size:24px; font-weight:700; color:var(--text); line-height:1; }
+.visit-stat-sub   { font-size:11px; color:var(--subtle); margin-top:3px; }
+
+/* 차트 영역 */
+.visit-chart-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-top:16px; }
+@media(max-width:700px){ .visit-chart-grid { grid-template-columns:1fr; } }
+.visit-chart-card { background:white; border:1px solid var(--border); border-radius:14px; padding:16px 18px; }
+.visit-chart-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+.visit-chart-wrap { position:relative; height:240px; }
+.visit-year-select { border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:12px; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+
 /* LOADING OVERLAY */
 #loadingOverlay { position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
 .loading-spinner { width:36px; height:36px; border:3px solid #f0e0e4; border-top-color:var(--pink); border-radius:50%; animation:spin 0.8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg) } }
 .loading-text { font-size:13px; color:var(--muted); font-weight:600; }
+
+/* 숫자 선택 팝업 */
+.num-picker-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:500; display:flex; align-items:center; justify-content:center; }
+.num-picker-box { background:white; border-radius:16px; padding:20px; width:320px; max-width:94vw; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+.num-picker-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:14px; text-align:center; }
+.num-picker-grid { display:grid; grid-template-columns:repeat(10,1fr); gap:5px; margin-bottom:14px; }
+.num-picker-btn { padding:7px 0; border-radius:8px; border:1px solid var(--border); background:white; font-size:13px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; text-align:center; transition:all 0.12s; color:var(--text); }
+.num-picker-btn:hover { background:#ede7f6; border-color:#9e77d0; color:#7e57c2; }
+.num-picker-btn.selected { background:#7e57c2; color:white; border-color:#7e57c2; }
+.num-picker-btn.zero { color:var(--subtle); }
+.num-picker-actions { display:flex; gap:8px; justify-content:flex-end; }
+.num-picker-cancel { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; }
+.num-picker-ok { background:#7e57c2; color:white; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; }
+
+/* drag cell — 클릭 가능하게만 */
+.drag-cell { position:relative; height:36px; min-width:70px; cursor:pointer; user-select:none; border-radius:8px; overflow:hidden; background:#f8f5ff; transition:background 0.12s; }
+.drag-cell:hover { background:#ede7f6; }
+.drag-cell-bar { position:absolute; bottom:0; left:0; right:0; background:#7e57c2; border-radius:6px 6px 0 0; min-height:2px; transition:height 0.2s; }
+.drag-cell-bar.visit-bar { background:#4a7fe5; }
+.drag-cell-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--text); z-index:1; }
+
+/* 백업 모달 */
+.backup-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:600; display:flex; align-items:center; justify-content:center; }
+.backup-modal { background:white; border-radius:16px; padding:24px; width:380px; max-width:94vw; }
+.backup-modal-title { font-size:15px; font-weight:700; margin-bottom:14px; }
+.backup-list { max-height:260px; overflow-y:auto; margin-bottom:14px; }
+.backup-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:10px; border:1px solid var(--border); margin-bottom:6px; cursor:pointer; transition:background 0.12s; }
+.backup-item:hover { background:#f8f5ff; border-color:#b39ddb; }
+.backup-item-name { font-size:13px; font-weight:600; color:var(--text); }
+.backup-item-date { font-size:11px; color:var(--subtle); }
+.backup-item-del { background:none; border:none; color:#ddd; cursor:pointer; font-size:14px; padding:0 4px; transition:color 0.12s; }
+.backup-item-del:hover { color:#e05555; }
+.backup-empty { text-align:center; padding:24px; color:var(--subtle); font-size:13px; }
+.backup-name-input { width:100%; border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; margin-bottom:10px; outline:none; }
+.backup-name-input:focus { border-color:#7e57c2; }
 
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {
@@ -380,8 +471,8 @@ tbody td { padding:10px 14px; vertical-align:middle; }
   </div>
 
   <div class="sb-action-row">
-    <button class="sb-act-btn sb-act-backup">💾 백업</button>
-    <button class="sb-act-btn sb-act-load">📥 불러오기</button>
+    <button class="sb-act-btn sb-act-backup" onclick="doBackup()">💾 백업</button>
+    <button class="sb-act-btn sb-act-load" onclick="doLoad()">📥 불러오기</button>
   </div>
 
   <button class="sb-menu-btn active" data-page="home" onclick="showPage('home',this)">📅 Today</button>
@@ -401,6 +492,7 @@ tbody td { padding:10px 14px; vertical-align:middle; }
 
   <div class="sb-section-label">기타</div>
   <button class="sb-menu-btn green" data-page="plant-main" onclick="showPage('plant-main',this)">화분관리</button>
+  <button class="sb-menu-btn" data-page="visit-stats" onclick="showPage('visit-stats',this)" style="border-color:#7e57c2;color:#7e57c2;">내원 현황</button>
 </aside>
 
 <div class="main-area">
@@ -773,6 +865,63 @@ tbody td { padding:10px 14px; vertical-align:middle; }
   </div>
 </div>
 
+<!-- ════════════════════════════════════
+     내원 현황
+════════════════════════════════════ -->
+<div class="page" id="page-visit-stats">
+  <div class="visit-header">
+    <div style="font-size:17px;font-weight:700;">📊 내원 현황</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="visit-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7e57c2;"></div>예약 환자</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4a7fe5;"></div>실제 내원</div>
+      </div>
+      <div class="visit-month-nav">
+        <button class="visit-month-btn" onclick="visitChangeMonth(-1)">‹</button>
+        <span class="visit-month-label" id="visitMonthLabel"></span>
+        <button class="visit-month-btn" onclick="visitChangeMonth(1)">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 월간 통계 카드 -->
+  <div class="visit-stat-grid" id="visitStatGrid"></div>
+
+  <!-- 드래그 입력 테이블 -->
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">💡 숫자 칸을 클릭하면 1~50 중 선택할 수 있습니다</div>
+  <div class="visit-table-wrap">
+    <table class="visit-table">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>예약 환자</th>
+          <th>실제 내원</th>
+          <th>내원율</th>
+        </tr>
+      </thead>
+      <tbody id="visitTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- 차트 영역 -->
+  <div class="visit-chart-grid">
+    <div class="visit-chart-card" style="grid-column:1/-1;">
+      <div class="visit-chart-title">
+        <span>이번 달 일별 예약 vs 내원</span>
+      </div>
+      <div class="visit-chart-wrap" style="height:200px;"><canvas id="visitMonthChart"></canvas></div>
+    </div>
+    <div class="visit-chart-card">
+      <div class="visit-chart-title">
+        <span>월별 내원율 추이</span>
+        <select class="visit-year-select" id="visitYearSel" onchange="renderVisitYearChart()"></select>
+      </div>
+      <div class="visit-chart-wrap"><canvas id="visitYearRateChart"></canvas></div>
+    </div>
+
+  </div>
+</div>
+
 </div><!-- /main-area -->
 
 <script>
@@ -827,6 +976,7 @@ let tangPts    = []
 let plants     = []
 let notices    = []
 let noticeLogs = []
+let visitData  = {}   // { 'YYYY-MM-DD': { reserved: N, visited: N } }
 let selectedRoute = null
 let modalRoute    = null
 let selectedDose  = null
@@ -842,6 +992,7 @@ function saveTang()    { fbSet('tangPts',    tangPts);    localStorage.setItem('
 function savePlants()  { fbSet('plants',     plants);     localStorage.setItem('plants',            JSON.stringify(plants))   }
 function saveNotices() { fbSet('notices',    notices);    localStorage.setItem('notices',           JSON.stringify(notices))  }
 function saveLogs()    { fbSet('noticeLogs', noticeLogs); localStorage.setItem('notice_logs',       JSON.stringify(noticeLogs)) }
+function saveVisit()   { fbSet('visitData',  visitData);  localStorage.setItem('visit_data',        JSON.stringify(visitData))  }
 
 // 오래된 로그 정리
 function cleanOldLogs() {
@@ -864,6 +1015,7 @@ function setupRealtimeListeners() {
   fbListen('plants',     v => { plants     = toArr(v); if(fbReady) safeRenderCurrent() })
   fbListen('notices',    v => { notices    = toArr(v); if(fbReady) safeRenderCurrent() })
   fbListen('noticeLogs', v => { noticeLogs = toArr(v); cleanOldLogs(); if(fbReady) { try { renderNoticeLogs() } catch(e){} } })
+  fbListen('visitData',  v => { visitData  = v || {};  if(fbReady) { try { renderVisitPage() } catch(e){} } })
 }
 
 function safeRenderCurrent() {
@@ -889,12 +1041,13 @@ function showLoading(show) {
 async function initApp() {
   showLoading(true)
   try {
-    const [p, t, pl, n, nl] = await Promise.all([
+    const [p, t, pl, n, nl, vd] = await Promise.all([
       fbGet('patients'), fbGet('tangPts'), fbGet('plants'),
-      fbGet('notices'),  fbGet('noticeLogs')
+      fbGet('notices'),  fbGet('noticeLogs'), fbGet('visitData')
     ])
     patients   = toArr(p);  tangPts = toArr(t); plants = toArr(pl)
     notices    = toArr(n);  noticeLogs = toArr(nl)
+    visitData  = vd || {}
     cleanOldLogs()
   } catch(e) {
     console.warn('Firebase 로드 실패, 로컬 캐시 사용')
@@ -903,6 +1056,7 @@ async function initApp() {
     plants     = JSON.parse(localStorage.getItem('plants')            || '[]')
     notices    = JSON.parse(localStorage.getItem('notices')           || '[]')
     noticeLogs = JSON.parse(localStorage.getItem('notice_logs')       || '[]')
+    visitData  = JSON.parse(localStorage.getItem('visit_data')        || '{}')
   }
   showLoading(false)
   // 데이터 로드 완료 후 현재 페이지 다시 렌더링
@@ -965,6 +1119,7 @@ function showPage(name, btn) {
     if (name === 'tang-reg')     initTangForm()
     if (name === 'plant-main')   renderPlants()
     if (name === 'today-main')   renderToday()
+    if (name === 'visit-stats')  renderVisitPage()
   } catch(e) { console.error('showPage render error:', name, e) }
 }
 
@@ -1858,6 +2013,421 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
 
+// ══════════════════════════════════════
+// 내원 현황
+// ══════════════════════════════════════
+let visitYear  = now.getFullYear()
+let visitMonth = now.getMonth() // 0-based
+
+function visitChangeMonth(delta) {
+  visitMonth += delta
+  if (visitMonth < 0)  { visitMonth = 11; visitYear-- }
+  if (visitMonth > 11) { visitMonth = 0;  visitYear++ }
+  renderVisitPage()
+}
+
+function visitDateKey(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+}
+
+function getDaysInMonth(y, m) {
+  return new Date(y, m+1, 0).getDate()
+}
+
+function getVisitVal(dateKey, field) {
+  return (visitData[dateKey] && visitData[dateKey][field]) || 0
+}
+
+function setVisitVal(dateKey, field, val) {
+  if (!visitData[dateKey]) visitData[dateKey] = { reserved: 0, visited: 0 }
+  visitData[dateKey][field] = Math.max(0, Math.round(val))
+  saveVisit()
+}
+
+function visitRate(reserved, visited) {
+  if (!reserved) return null
+  return Math.round(visited / reserved * 100)
+}
+
+function rateBadge(rate) {
+  if (rate === null) return '<span class="rate-badge rate-none">—</span>'
+  if (rate >= 90) return `<span class="rate-badge rate-high">${rate}%</span>`
+  if (rate >= 70) return `<span class="rate-badge rate-mid">${rate}%</span>`
+  return `<span class="rate-badge rate-low">${rate}%</span>`
+}
+
+function renderVisitPage() {
+  const y = visitYear, m = visitMonth
+  const days = getDaysInMonth(y, m)
+  const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+  const DOW = ['일','월','화','수','목','금','토']
+
+  document.getElementById('visitMonthLabel').textContent = `${y}년 ${MONTHS[m]}`
+
+  // 월간 합계
+  let totalResv = 0, totalVisit = 0, workDays = 0
+  for (let d = 1; d <= days; d++) {
+    const key = visitDateKey(y, m, d)
+    const r = getVisitVal(key, 'reserved')
+    const v = getVisitVal(key, 'visited')
+    totalResv  += r
+    totalVisit += v
+    if (r > 0 || v > 0) workDays++
+  }
+  const monthRate = visitRate(totalResv, totalVisit)
+
+  // 통계 카드
+  document.getElementById('visitStatGrid').innerHTML = `
+    <div class="visit-stat-card">
+      <div class="visit-stat-label">월 총 예약</div>
+      <div class="visit-stat-value" style="color:#7e57c2">${totalResv}</div>
+      <div class="visit-stat-sub">명</div>
+    </div>
+    <div class="visit-stat-card">
+      <div class="visit-stat-label">월 실제 내원</div>
+      <div class="visit-stat-value" style="color:#4a7fe5">${totalVisit}</div>
+      <div class="visit-stat-sub">명</div>
+    </div>
+    <div class="visit-stat-card">
+      <div class="visit-stat-label">월 내원율</div>
+      <div class="visit-stat-value" style="color:${monthRate>=90?'#388e3c':monthRate>=70?'#e07000':'#c62828'}">${monthRate !== null ? monthRate+'%' : '—'}</div>
+      <div class="visit-stat-sub">예약 대비</div>
+    </div>
+    <div class="visit-stat-card">
+      <div class="visit-stat-label">진료일 수</div>
+      <div class="visit-stat-value">${workDays}</div>
+      <div class="visit-stat-sub">일</div>
+    </div>`
+
+  // 테이블
+  const tbody = document.getElementById('visitTableBody')
+  tbody.innerHTML = ''
+  for (let d = 1; d <= days; d++) {
+    const key = visitDateKey(y, m, d)
+    const dow = new Date(y, m, d).getDay()
+    const isSun = dow === 0, isSat = dow === 6
+    const r = getVisitVal(key, 'reserved')
+    const v = getVisitVal(key, 'visited')
+    const rate = visitRate(r, v)
+    const dowClass = isSun ? 'sun-col' : isSat ? 'sat-col' : ''
+
+    const tr = document.createElement('tr')
+    if (isSun || isSat) tr.classList.add('weekend')
+    tr.innerHTML = `
+      <td class="${dowClass}">${m+1}/${d} (${DOW[dow]})</td>
+      <td><div class="drag-cell" id="dc-r-${key}" data-key="${key}" data-field="reserved" data-val="${r}">
+        <div class="drag-cell-bar" style="height:${r?Math.min(90,r*4+10):2}px"></div>
+        <div class="drag-cell-val">${r}</div>
+      </div></td>
+      <td><div class="drag-cell" id="dc-v-${key}" data-key="${key}" data-field="visited" data-val="${v}">
+        <div class="drag-cell-bar visit-bar" style="height:${v?Math.min(90,v*4+10):2}px"></div>
+        <div class="drag-cell-val">${v}</div>
+      </div></td>
+      <td>${rateBadge(rate)}</td>`
+    tbody.appendChild(tr)
+  }
+
+  // 드래그 이벤트 바인딩
+  bindDragCells()
+
+  // 차트 렌더
+  renderVisitMonthChart(y, m, days)
+  renderVisitYearSelects()
+  renderVisitYearChart()
+}
+
+// ── 드래그 입력 (전역 단일 리스너 방식) ──
+let _dragActive = null  // { cell, startY, startVal }
+
+// ── 숫자 선택 팝업 ──
+function openNumPicker(cell) {
+  const curVal = parseInt(cell.dataset.val) || 0
+  const field  = cell.dataset.field
+  const label  = field === 'reserved' ? '예약 환자 수' : '실제 내원 환자 수'
+
+  const overlay = document.createElement('div')
+  overlay.className = 'num-picker-overlay'
+
+  const nums = [0, ...Array.from({length:50},(_,i)=>i+1)]
+  overlay.innerHTML = `
+    <div class="num-picker-box">
+      <div class="num-picker-title">📋 ${label} 선택</div>
+      <div class="num-picker-grid">
+        ${nums.map(n=>`<button class="num-picker-btn${n===0?' zero':''}${n===curVal?' selected':''}" data-n="${n}">${n}</button>`).join('')}
+      </div>
+      <div class="num-picker-actions">
+        <button class="num-picker-cancel">취소</button>
+        <button class="num-picker-ok">확인</button>
+      </div>
+    </div>`
+
+  let selected = curVal
+
+  overlay.querySelectorAll('.num-picker-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      overlay.querySelectorAll('.num-picker-btn').forEach(b=>b.classList.remove('selected'))
+      btn.classList.add('selected')
+      selected = parseInt(btn.dataset.n)
+    })
+  })
+  overlay.querySelector('.num-picker-cancel').addEventListener('click', () => overlay.remove())
+  overlay.querySelector('.num-picker-ok').addEventListener('click', () => {
+    updateVisitCell(cell, selected)
+    overlay.remove()
+  })
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+}
+
+function updateVisitCell(cell, v) {
+  const key   = cell.dataset.key
+  const field = cell.dataset.field
+  v = Math.max(0, Math.min(50, Math.round(v)))
+  cell.dataset.val = v
+  cell.querySelector('.drag-cell-val').textContent = v
+  cell.querySelector('.drag-cell-bar').style.height = (v ? Math.min(88, v*1.6+4) : 2) + 'px'
+  const row = cell.closest('tr')
+  if (row) {
+    const cells = row.querySelectorAll('.drag-cell')
+    const r   = parseInt(cells[0]?.dataset.val) || 0
+    const vis = parseInt(cells[1]?.dataset.val) || 0
+    if (row.cells[3]) row.cells[3].innerHTML = rateBadge(visitRate(r, vis))
+  }
+  setVisitVal(key, field, v)
+  try { renderVisitMonthChart(visitYear, visitMonth, getDaysInMonth(visitYear, visitMonth)) } catch(e){}
+}
+
+function bindDragCells() {
+  document.querySelectorAll('.drag-cell').forEach(cell => {
+    const fresh = cell.cloneNode(true)
+    cell.parentNode.replaceChild(fresh, cell)
+    fresh.addEventListener('click', () => openNumPicker(fresh))
+  })
+}
+
+// ── 월별 차트 ──
+function renderVisitMonthChart(y, m, days) {
+  const labels = [], resArr = [], visArr = []
+  for (let d = 1; d <= days; d++) {
+    const key = visitDateKey(y, m, d)
+    labels.push(`${d}일`)
+    resArr.push(getVisitVal(key, 'reserved'))
+    visArr.push(getVisitVal(key, 'visited'))
+  }
+  if (charts.visitMonth) charts.visitMonth.destroy()
+  charts.visitMonth = new Chart(document.getElementById('visitMonthChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'예약', data:resArr,  backgroundColor:'#7e57c288', borderColor:'#7e57c2', borderWidth:1.5, borderRadius:3 },
+        { label:'내원', data:visArr,  backgroundColor:'#4a7fe588', borderColor:'#4a7fe5', borderWidth:1.5, borderRadius:3 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ font:{ family:'Noto Sans KR', size:12 }, padding:14 } } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+  })
+}
+
+// ── 연도별 선택 초기화 ──
+function renderVisitYearSelects() {
+  const keys = Object.keys(visitData)
+  const curY  = String(now.getFullYear())
+  const years = [...new Set([...keys.map(k => k.slice(0,4)), curY])].sort().reverse()
+
+  const ySel = document.getElementById('visitYearSel')
+  if (ySel) {
+    const cur = ySel.value || curY
+    ySel.innerHTML = years.map(y => `<option value="${y}" ${y===cur?'selected':''}>${y}년</option>`).join('')
+  }
+
+}
+
+// ── 연도별 월별 내원율 차트 ──
+function renderVisitYearChart() {
+  const y = document.getElementById('visitYearSel')?.value || String(visitYear)
+  const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+  const rates = [], resArr = [], visArr = []
+
+  for (let m = 0; m < 12; m++) {
+    let totalR = 0, totalV = 0
+    const days = getDaysInMonth(parseInt(y), m)
+    for (let d = 1; d <= days; d++) {
+      const key = visitDateKey(parseInt(y), m, d)
+      totalR += getVisitVal(key, 'reserved')
+      totalV += getVisitVal(key, 'visited')
+    }
+    resArr.push(totalR); visArr.push(totalV)
+    rates.push(totalR ? Math.round(totalV/totalR*100) : null)
+  }
+
+  if (charts.visitYearRate) charts.visitYearRate.destroy()
+  charts.visitYearRate = new Chart(document.getElementById('visitYearRateChart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label:'내원율(%)', data:rates, borderColor:'#d0546a', backgroundColor:'#d0546a33', tension:0.35, fill:true, pointRadius:5, borderWidth:2, spanGaps:true },
+        { label:'예약', data:resArr, borderColor:'#7e57c2', backgroundColor:'transparent', tension:0.3, borderDash:[4,3], pointRadius:3, borderWidth:1.5, yAxisID:'y2' },
+        { label:'내원', data:visArr, borderColor:'#4a7fe5', backgroundColor:'transparent', tension:0.3, borderDash:[4,3], pointRadius:3, borderWidth:1.5, yAxisID:'y2' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ font:{ family:'Noto Sans KR', size:11 }, padding:10 } } },
+      scales:{
+        y:{ beginAtZero:true, max:100, ticks:{ callback: v => v+'%' }, title:{ display:true, text:'내원율', font:{ size:11 } } },
+        y2:{ position:'right', beginAtZero:true, grid:{ drawOnChartArea:false }, title:{ display:true, text:'인원', font:{ size:11 } } }
+      }
+    }
+  })
+}
+
+
+// ══════════════════════════════════════
+// 백업 / 불러오기
+// ══════════════════════════════════════
+function doBackup() {
+  const overlay = document.createElement('div')
+  overlay.className = 'backup-modal-bg'
+  const d = new Date()
+  const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`
+  const defaultName = `원내관리_${dateStr}`
+
+  overlay.innerHTML = `
+    <div class="backup-modal">
+      <div class="backup-modal-title">💾 백업 저장</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">파일 이름을 입력하고 저장하세요.</div>
+      <input class="backup-name-input" id="backupNameInput" value="${defaultName}" placeholder="파일 이름">
+      <div style="font-size:11px;color:var(--subtle);background:#f8f8f8;border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.7;">
+        📁 <strong>저장 위치 지정 방법</strong><br>
+        저장 버튼을 누르면 브라우저 다운로드 창이 열려요.<br>
+        원하는 폴더(바탕화면 등)를 직접 선택할 수 있어요.<br>
+        <span style="color:#388e3c;">💡 크롬: 설정 → 다운로드 → "다운로드 전 저장 위치 확인" 켜기</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="num-picker-cancel" id="backupCancelBtn">취소</button>
+        <button class="num-picker-ok" id="backupSaveBtn">💾 저장</button>
+      </div>
+    </div>`
+
+  overlay.querySelector('#backupCancelBtn').addEventListener('click', () => overlay.remove())
+  overlay.querySelector('#backupSaveBtn').addEventListener('click', () => {
+    const name = overlay.querySelector('#backupNameInput').value.trim() || defaultName
+    const data = {
+      name,
+      savedAt: d.toISOString(),
+      version: '1.0',
+      patients, tangPts, plants, notices, noticeLogs, visitData
+    }
+    // 로컬스토리지에도 보관
+    const key = `backup_${Date.now()}`
+    const backupList = JSON.parse(localStorage.getItem('backup_list') || '[]')
+    backupList.unshift({ key, name, savedAt: data.savedAt })
+    localStorage.setItem('backup_list', JSON.stringify(backupList))
+    localStorage.setItem(key, JSON.stringify(data))
+    // .json 파일 다운로드
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = name.endsWith('.json') ? name : name + '.json'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    overlay.remove()
+    showToast('✅ 백업 파일이 저장되었습니다')
+  })
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+  setTimeout(() => overlay.querySelector('#backupNameInput')?.select(), 100)
+}
+
+function doLoad() {
+  const backupList = JSON.parse(localStorage.getItem('backup_list') || '[]')
+  const overlay = document.createElement('div')
+  overlay.className = 'backup-modal-bg'
+
+  const listHTML = backupList.length
+    ? backupList.map(b => `
+        <div class="backup-item" data-key="${b.key}">
+          <div style="flex:1;min-width:0;">
+            <div class="backup-item-name">${escHtml(b.name)}</div>
+            <div class="backup-item-date">${new Date(b.savedAt).toLocaleString('ko-KR')}</div>
+          </div>
+          <button class="backup-item-del" title="삭제" onclick="event.stopPropagation();deleteBackup('${b.key}')">✕</button>
+        </div>`).join('')
+    : '<div class="backup-empty">브라우저에 저장된 백업이 없습니다</div>'
+
+  overlay.innerHTML = `
+    <div class="backup-modal">
+      <div class="backup-modal-title">📥 불러오기</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">브라우저 저장 목록에서 선택하거나, JSON 파일을 직접 불러오세요.</div>
+      <div class="backup-list" id="backupListEl">${listHTML}</div>
+      <div style="border-top:1px solid var(--border);margin:12px 0 10px;"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">📂 파일에서 불러오기</div>
+      <input type="file" id="backupFileInput" accept=".json" style="font-size:12px;margin-bottom:14px;width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;">
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="num-picker-cancel" id="loadCancelBtn">닫기</button>
+        <button class="num-picker-ok" id="loadFileBtn">파일 불러오기</button>
+      </div>
+    </div>`
+
+  overlay.querySelectorAll('.backup-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const key = item.dataset.key
+      const raw = localStorage.getItem(key)
+      if (!raw) { showToast('저장된 데이터를 찾을 수 없습니다'); return }
+      if (confirmLoad()) { applyBackupData(JSON.parse(raw)); overlay.remove() }
+    })
+  })
+  overlay.querySelector('#loadCancelBtn').addEventListener('click', () => overlay.remove())
+  overlay.querySelector('#loadFileBtn').addEventListener('click', () => {
+    const file = overlay.querySelector('#backupFileInput')?.files[0]
+    if (!file) { showToast('파일을 선택해 주세요'); return }
+    const reader = new FileReader()
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result)
+        if (!data.savedAt && !data.patients && !data.visitData) { showToast('❌ 올바른 백업 파일이 아닙니다'); return }
+        if (confirmLoad()) { applyBackupData(data); overlay.remove() }
+      } catch { showToast('❌ 파일을 읽을 수 없습니다') }
+    }
+    reader.readAsText(file)
+  })
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+}
+
+function confirmLoad() {
+  // confirm 대신 직접 진행 (로컬파일 환경에서 confirm도 막힐 수 있음)
+  return true
+}
+
+function deleteBackup(key) {
+  const backupList = JSON.parse(localStorage.getItem('backup_list') || '[]')
+  const updated = backupList.filter(b => b.key !== key)
+  localStorage.setItem('backup_list', JSON.stringify(updated))
+  localStorage.removeItem(key)
+  // 목록 UI 갱신
+  const item = document.querySelector(`.backup-item[data-key="${key}"]`)
+  if (item) item.remove()
+  if (!updated.length) {
+    const listEl = document.getElementById('backupListEl')
+    if (listEl) listEl.innerHTML = '<div class="backup-empty">브라우저에 저장된 백업이 없습니다</div>'
+  }
+  showToast('백업이 삭제되었습니다')
+}
+
+function applyBackupData(data) {
+  if (data.patients)   { patients   = data.patients;   saveP()       }
+  if (data.tangPts)    { tangPts    = data.tangPts;    saveTang()    }
+  if (data.plants)     { plants     = data.plants;     savePlants()  }
+  if (data.notices)    { notices    = data.notices;    saveNotices() }
+  if (data.noticeLogs) { noticeLogs = data.noticeLogs; saveLogs()    }
+  if (data.visitData)  { visitData  = data.visitData;  saveVisit()   }
+  showToast('✅ 불러오기 완료! 새로고침합니다')
+  setTimeout(() => location.reload(), 1200)
+}
 function showToast(msg) {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show')
   setTimeout(()=>t.classList.remove('show'),2500)
