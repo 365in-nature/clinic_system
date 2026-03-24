@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#d0546a">
+<title>원내 관리 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Firebase UMD (전역 함수와 호환) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --pink: #d0546a; --pink-hover: #b8445a; --pink-light: #fdf0f3; --pink-border: #e88a9a;
+  --teal: #0097a7; --teal-hover: #00838f; --teal-light: #e0f7fa; --teal-border: #80deea;
+  --bg: #f4f4f8; --card: #fff; --border: #e4e4ea;
+  --text: #1a1a2e; --muted: #6b7280; --subtle: #9ca3af;
+  --c-간판:#e07030; --c-인터넷:#4a7fe5; --c-블로그:#27ae60;
+  --c-인스타:#c2185b; --c-지인:#9b59b6; --c-AI:#0097a7; --c-기타:#78909c; --c-협력업체:#00695c;
+  --amber:#e07000; --amber-light:#fff3e0;
+  --green:#388e3c; --green-light:#e8f5e9;
+  --red:#c62828; --red-light:#fde8e8;
+}
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; height:100vh; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar { width:156px; background:white; border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:16px 8px 12px; gap:5px; overflow-y:auto; flex-shrink:0; }
+.sidebar::-webkit-scrollbar { width:3px; }
+.sidebar::-webkit-scrollbar-thumb { background:#e0e0e0; border-radius:3px; }
+.sb-logo { width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#f9d5dc,#f0b8c4); display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:2px; }
+.sb-name { font-size:11.5px; font-weight:700; color:var(--text); text-align:center; }
+.sb-date { font-size:10px; color:var(--muted); margin-bottom:6px; }
+/* Mini calendar */
+.sb-cal { width:100%; margin-bottom:4px; }
+.sb-cal-header { display:flex; justify-content:space-between; align-items:center; padding:0 2px; margin-bottom:4px; }
+.sb-cal-month { font-size:11px; font-weight:700; color:var(--text); }
+.sb-cal-nav { background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:0 3px; border-radius:4px; }
+.sb-cal-nav:hover { background:var(--bg); }
+.sb-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+.sb-cal-dow { font-size:9px; text-align:center; padding:2px 0; color:var(--subtle); font-weight:600; }
+.sb-cal-dow.sun { color:#e05060; }
+.sb-cal-dow.sat { color:var(--teal); }
+.sb-cal-day { font-size:9.5px; text-align:center; padding:2px 1px; cursor:pointer; border-radius:50%; color:var(--text); line-height:1.6; }
+.sb-cal-day:hover { background:var(--bg); }
+.sb-cal-day.today { background:var(--pink); color:white; font-weight:700; }
+.sb-cal-day.sun { color:#e05060; }
+.sb-cal-day.sat { color:var(--teal); }
+.sb-cal-day.other { color:var(--subtle); }
+/* Sidebar action buttons */
+.sb-action-row { display:flex; gap:4px; width:100%; margin:4px 0 6px; }
+.sb-act-btn { flex:1; padding:5px 2px; border-radius:8px; border:none; cursor:pointer; font-size:9.5px; font-weight:700; font-family:'Noto Sans KR',sans-serif; transition:filter 0.15s; }
+.sb-act-btn:hover { filter:brightness(0.95); }
+.sb-act-backup { background:#e8f0fe; color:#2a5fc0; }
+.sb-act-load   { background:#fff8e1; color:#c08000; }
+/* Sidebar menu */
+.sb-section-label { font-size:9px; font-weight:700; color:var(--subtle); text-transform:uppercase; letter-spacing:0.5px; align-self:flex-start; padding-left:4px; margin-top:4px; }
+.sb-menu-btn { width:100%; padding:7px 10px; border-radius:20px; border:1.5px solid var(--pink-border); background:white; color:var(--pink); font-size:11px; font-weight:700; cursor:pointer; text-align:center; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.sb-menu-btn:hover { background:var(--pink-light); }
+.sb-menu-btn.active { background:var(--pink); color:white; border-color:var(--pink); }
+.sb-menu-btn.teal   { border-color:var(--teal-border); color:var(--teal); }
+.sb-menu-btn.teal:hover { background:var(--teal-light); }
+.sb-menu-btn.teal.active { background:var(--teal); color:white; border-color:var(--teal); }
+.sb-menu-btn.green  { border-color:#a5d6a7; color:var(--green); }
+.sb-menu-btn.green:hover { background:var(--green-light); }
+.sb-menu-btn.green.active { background:var(--green); color:white; border-color:var(--green); }
+
+/* ── MAIN CONTENT AREA ── */
+.main-area { flex:1; overflow-y:auto; background:var(--bg); }
+
+/* ── PAGES ── */
+.page { display:none; padding:16px 20px; max-width:1200px; }
+.page.active { display:block; }
+
+/* ── HOME GRID (Today 대시보드) ── */
+.home-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr; grid-template-rows:auto auto; gap:10px; }
+.home-card { background:white; border-radius:14px; border:1px solid var(--border); padding:16px 18px; overflow:hidden; }
+.home-card-title { font-size:12px; font-weight:700; color:var(--text); text-align:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #f0f0f4; }
+.home-card.span2 { grid-column: span 2; }
+
+.sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+.sec-title { font-size:17px; font-weight:700; }
+.sec-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+/* BUTTONS */
+.btn-primary { background:var(--pink); color:white; border:none; border-radius:10px; padding:9px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:background 0.15s,transform 0.1s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary:hover { background:var(--pink-hover); }
+.btn-primary:active { transform:scale(0.98); }
+.btn-teal { background:var(--teal); color:white; border:none; border-radius:10px; padding:9px 18px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:background 0.15s,transform 0.1s; display:inline-flex; align-items:center; gap:6px; }
+.btn-teal:hover { background:var(--teal-hover); }
+.btn-ghost { background:none; color:var(--muted); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.btn-ghost:hover { border-color:var(--pink-border); color:var(--pink); }
+.btn-danger { background:none; color:#e05555; border:1px solid #f0c0c0; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.btn-danger:hover { background:var(--red-light); }
+.btn-done { background:none; color:var(--green); border:1px solid #c8e6c9; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.btn-done:hover { background:var(--green-light); }
+
+/* CARDS */
+.card { background:var(--card); border-radius:14px; border:1px solid var(--border); padding:20px 22px; margin-bottom:16px; }
+.form-card { background:white; border-radius:14px; border:2px dashed var(--pink-border); padding:22px 24px; margin-bottom:20px; }
+.form-card-teal { background:white; border-radius:14px; border:2px dashed var(--teal-border); padding:22px 24px; margin-bottom:20px; }
+.form-title { font-size:14px; font-weight:700; color:var(--pink); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
+.form-title-teal { font-size:14px; font-weight:700; color:var(--teal); margin-bottom:16px; display:flex; align-items:center; gap:6px; }
+
+/* FORM FIELDS */
+.field-group { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+@media(max-width:600px) { .field-group { grid-template-columns:1fr; } }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.field-input { border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); background:white; outline:none; transition:border-color 0.15s; }
+.field-input:focus { border-color:var(--teal); }
+.field-input-pink:focus { border-color:var(--pink); }
+
+/* DOSE SELECTOR */
+.dose-row { display:flex; gap:10px; }
+.dose-btn { flex:1; padding:10px 8px; border-radius:10px; border:2px solid var(--border); background:white; font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; color:var(--muted); transition:all 0.15s; text-align:center; }
+.dose-btn:hover { border-color:var(--teal-border); color:var(--teal); }
+.dose-btn.selected { background:var(--teal); color:white; border-color:var(--teal); }
+
+/* CALL DATE PREVIEW */
+.call-preview { background:var(--teal-light); border-radius:12px; padding:14px 16px; margin:14px 0; display:none; }
+.call-preview.show { display:block; }
+.call-preview-title { font-size:11px; font-weight:700; color:var(--teal); margin-bottom:10px; }
+.call-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(0,151,167,0.15); }
+.call-row:last-child { border-bottom:none; }
+.call-type { font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px; min-width:80px; text-align:center; }
+.call-arrive { background:#fff3e0; color:#e07000; }
+.call-resv   { background:#e8f5e9; color:#388e3c; }
+.call-date-txt { font-size:13px; font-weight:700; color:var(--text); }
+.call-day-txt  { font-size:11px; color:var(--muted); }
+.call-dday     { font-size:11px; font-weight:700; padding:2px 8px; border-radius:8px; }
+.dday-today  { background:#fff3e0; color:#e07000; }
+.dday-past   { background:#f5f5f5; color:#aaa; }
+.dday-soon   { background:#fce4ec; color:#c2185b; }
+.dday-future { background:#e8f5e9; color:#388e3c; }
+.form-actions { display:flex; gap:8px; margin-top:4px; }
+
+/* STATS */
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:20px; }
+.stat-card { background:white; border:1px solid var(--border); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:4px; }
+.stat-label { font-size:11px; color:var(--muted); font-weight:600; }
+.stat-value { font-size:26px; font-weight:700; color:var(--text); line-height:1; }
+.stat-sub { font-size:11px; color:var(--subtle); }
+
+/* ROUTE */
+.route-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.route-badge { padding:6px 16px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; border:2px solid transparent; transition:all 0.15s; user-select:none; }
+.rb-간판   { background:#fff3e8; color:var(--c-간판);   border-color:#ffd0a8; }
+.rb-인터넷 { background:#eef3ff; color:var(--c-인터넷); border-color:#b8d0f8; }
+.rb-블로그 { background:#e8f5e9; color:var(--c-블로그); border-color:#a8d8aa; }
+.rb-인스타 { background:#fce4ec; color:var(--c-인스타); border-color:#f8bbd0; }
+.rb-지인   { background:#f3e5f5; color:var(--c-지인);   border-color:#e1bee7; }
+.rb-AI     { background:#e0f7fa; color:var(--c-AI);     border-color:#b2ebf2; }
+.rb-기타   { background:#eceff1; color:var(--c-기타);  border-color:#cfd8dc; }
+.rb-협력업체 { background:#e0f2f1; color:var(--c-협력업체); border-color:#80cbc4; }
+.rb-간판.selected   { background:var(--c-간판);   color:white; }
+.rb-인터넷.selected { background:var(--c-인터넷); color:white; }
+.rb-블로그.selected { background:var(--c-블로그); color:white; }
+.rb-인스타.selected { background:var(--c-인스타); color:white; }
+.rb-지인.selected   { background:var(--c-지인);   color:white; }
+.rb-AI.selected     { background:var(--c-AI);     color:white; }
+.rb-기타.selected   { background:var(--c-기타);   color:white; }
+.rb-협력업체.selected { background:var(--c-협력업체); color:white; }
+.route-tag { display:inline-block; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+.rt-간판   { background:#fff3e8; color:var(--c-간판); }
+.rt-인터넷 { background:#eef3ff; color:var(--c-인터넷); }
+.rt-블로그 { background:#e8f5e9; color:var(--c-블로그); }
+.rt-인스타 { background:#fce4ec; color:var(--c-인스타); }
+.rt-지인   { background:#f3e5f5; color:var(--c-지인); }
+.rt-AI     { background:#e0f7fa; color:var(--c-AI); }
+.rt-기타   { background:#eceff1; color:var(--c-기타); }
+.rt-협력업체 { background:#e0f2f1; color:var(--c-협력업체); }
+
+/* 지인 이름 입력 */
+.jiin-input-wrap { display:flex; align-items:center; gap:8px; margin-top:10px; margin-bottom:4px; animation: fadeInDown 0.2s ease; }
+@keyframes fadeInDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.jiin-input { border:2px solid var(--c-지인); border-radius:8px; padding:8px 12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); background:white; outline:none; flex:1; }
+.jiin-label { font-size:12px; font-weight:700; color:var(--c-지인); white-space:nowrap; }
+.etc-input  { border:2px solid var(--c-기타); border-radius:8px; padding:8px 12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); background:white; outline:none; flex:1; }
+.etc-label  { font-size:12px; font-weight:700; color:var(--c-기타); white-space:nowrap; }
+.partner-input { border:2px solid var(--c-협력업체); border-radius:8px; padding:8px 12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); background:white; outline:none; flex:1; }
+.partner-label { font-size:12px; font-weight:700; color:var(--c-협력업체); white-space:nowrap; }
+
+/* 지인/협력업체 랭킹 */
+.jiin-rank-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; background:#f8f5ff; margin-bottom:6px; }
+.jiin-rank-num  { width:22px; height:22px; border-radius:50%; background:var(--c-지인); color:white; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.jiin-rank-name { font-size:13px; font-weight:700; color:var(--text); flex:1; }
+.jiin-rank-cnt  { font-size:12px; font-weight:700; color:var(--c-지인); background:#ede7f6; padding:2px 10px; border-radius:10px; }
+.jiin-rank-bar-wrap { flex:2; background:#ede7f6; border-radius:4px; height:6px; overflow:hidden; }
+.jiin-rank-bar  { height:6px; background:var(--c-지인); border-radius:4px; transition:width 0.4s ease; }
+.partner-rank-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; background:#e0f2f1; margin-bottom:6px; }
+.partner-rank-num  { width:22px; height:22px; border-radius:50%; background:var(--c-협력업체); color:white; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.partner-rank-name { font-size:13px; font-weight:700; color:var(--text); flex:1; }
+.partner-rank-cnt  { font-size:12px; font-weight:700; color:var(--c-협력업체); background:#b2dfdb; padding:2px 10px; border-radius:10px; }
+.partner-rank-bar-wrap { flex:2; background:#b2dfdb; border-radius:4px; height:6px; overflow:hidden; }
+.partner-rank-bar  { height:6px; background:var(--c-협력업체); border-radius:4px; transition:width 0.4s ease; }
+
+/* TABLE */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th { padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:var(--muted); border-bottom:2px solid var(--border); background:#fafafa; white-space:nowrap; }
+tbody tr { border-bottom:1px solid #f5f5f8; transition:background 0.1s; }
+tbody tr:hover { background:#fafbff; }
+tbody tr.done-row { opacity:0.55; }
+tbody td { padding:10px 14px; vertical-align:middle; }
+.td-num { color:var(--subtle); font-size:11px; }
+.td-date { color:var(--muted); font-size:12px; white-space:nowrap; }
+.td-name { font-weight:700; font-size:13px; }
+.td-chart { font-size:12px; color:var(--muted); }
+.dose-tag { display:inline-block; padding:3px 10px; border-radius:10px; font-size:11px; font-weight:700; }
+.dose-15 { background:#fff3e0; color:#e07000; }
+.dose-30 { background:#e8f5e9; color:#388e3c; }
+.status-tag { display:inline-block; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700; white-space:nowrap; }
+.st-active   { background:#e0f7fa; color:#0097a7; }
+.st-done     { background:#f5f5f5; color:#aaa; }
+.st-arrive-due { background:#fff3e0; color:#e07000; }
+.st-resv-due   { background:#fce4ec; color:#c2185b; }
+
+/* CHART */
+.chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:700px) { .chart-grid { grid-template-columns:1fr; } }
+.chart-card { background:white; border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+.chart-title { font-size:13px; font-weight:700; margin-bottom:14px; }
+.chart-wrap { position:relative; height:220px; }
+
+/* FILTER */
+.month-select { border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; color:var(--text); background:white; cursor:pointer; font-family:'Noto Sans KR',sans-serif; }
+
+/* EMPTY */
+.empty { text-align:center; padding:48px 20px; color:var(--subtle); font-size:13px; }
+.empty-icon { font-size:36px; margin-bottom:10px; }
+
+/* TOAST */
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1a1a2e; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:600; opacity:0; transition:all 0.3s; z-index:999; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* MODAL */
+.modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+.modal-bg.show { opacity:1; pointer-events:all; }
+.modal { background:white; border-radius:16px; padding:28px; width:360px; max-width:94vw; transform:scale(0.95); transition:transform 0.2s; max-height:90vh; overflow-y:auto; }
+.modal-bg.show .modal { transform:scale(1); }
+.modal-title { font-size:16px; font-weight:700; margin-bottom:18px; }
+.modal-route-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+.modal-rb { padding:10px 8px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; border:2px solid transparent; text-align:center; transition:all 0.15s; }
+.modal-rb.selected { color:white !important; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+.btn-cancel { background:none; border:1px solid var(--border); border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Noto Sans KR',sans-serif; }
+
+/* TABS inside page */
+.inner-tabs { display:flex; gap:6px; margin-bottom:18px; }
+.inner-tab { padding:6px 16px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; border:none; background:var(--bg); color:var(--muted); font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; }
+.inner-tab.active { background:var(--teal); color:white; }
+
+/* ALERT BANNER */
+.alert-banner { background:#fff8e1; border:1px solid #ffe082; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:12px; display:flex; align-items:center; gap:8px; }
+.alert-banner.urgent { background:#fce4ec; border-color:#f48fb1; }
+
+/* 화분관리 */
+.plant-grid { display:flex; flex-direction:column; gap:0; }
+.plant-card { background:white; border:none; border-radius:0; padding:13px 18px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #f0f0f4; transition:background 0.12s; }
+.plant-card:first-child { border-radius:14px 14px 0 0; }
+.plant-card:last-child  { border-radius:0 0 14px 14px; border-bottom:none; }
+.plant-card:only-child  { border-radius:14px; }
+.plant-card:hover { background:#fafafa; }
+.plant-card.status-ok     { }
+.plant-card.status-water  { background:#fffde7; }
+.plant-card.status-urgent { background:#fff5f5; animation: urgentPulse 1.8s ease-in-out infinite; }
+@keyframes urgentPulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
+.plant-icon { font-size:20px; flex-shrink:0; width:28px; text-align:center; }
+.plant-name { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+.plant-meta-small { font-size:11px; color:var(--subtle); margin-top:1px; }
+.plant-status-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+.psb-ok     { background:var(--green-light); color:var(--green); }
+.psb-water  { background:#fff9c4; color:#f57f17; }
+.psb-urgent { background:#ffebee; color:#c62828; }
+.plant-cycle-btns { display:flex; gap:5px; flex-wrap:wrap; }
+.cycle-btn { flex:1; min-width:40px; padding:7px 4px; border-radius:8px; border:2px solid var(--border); background:white; font-size:12px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; color:var(--muted); transition:all 0.15s; text-align:center; }
+.cycle-btn:hover { border-color:#a5d6a7; color:var(--green); }
+.cycle-btn.selected { background:var(--green); color:white; border-color:var(--green); }
+.btn-watered { padding:5px 12px; border-radius:8px; border:1px solid #c8e6c9; background:var(--green-light); color:var(--green); font-size:11px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; transition:all 0.15s; white-space:nowrap; }
+.btn-watered:hover { background:var(--green); color:white; }
+.btn-plant-del { background:none; color:#ddd; border:none; font-size:13px; cursor:pointer; padding:0 4px; transition:color 0.15s; flex-shrink:0; }
+.btn-plant-del:hover { color:#e05555; }
+.plant-reg-form { background:white; border-radius:14px; border:2px dashed #a5d6a7; padding:20px 22px; margin-bottom:16px; }
+.plant-reg-title { font-size:14px; font-weight:700; color:var(--green); margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+.plant-list-wrap { background:white; border-radius:14px; border:1px solid var(--border); overflow:hidden; margin-bottom:16px; }
+
+/* TODAY & 공지사항 */
+.today-hero { background:white; border-radius:16px; border:1px solid var(--border); padding:28px 30px; margin-bottom:16px; display:flex; align-items:center; gap:24px; }
+.today-date-block { flex:1; }
+.today-year  { font-size:13px; color:var(--muted); font-weight:600; margin-bottom:2px; }
+.today-main  { font-size:36px; font-weight:700; color:var(--text); line-height:1.15; }
+.today-dow   { font-size:13px; color:var(--muted); margin-top:4px; }
+.today-divider { width:1px; height:64px; background:var(--border); }
+.today-info  { display:flex; flex-direction:column; gap:6px; }
+.today-info-item { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
+.today-info-dot  { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+.notice-card { background:white; border-radius:14px; border:1px solid var(--border); overflow:hidden; margin-bottom:16px; }
+.notice-header { padding:16px 20px 12px; border-bottom:1px solid #f0f0f4; display:flex; align-items:center; justify-content:space-between; }
+.notice-title-txt { font-size:14px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px; }
+.notice-count { font-size:11px; background:var(--pink-light); color:var(--pink); padding:2px 8px; border-radius:10px; font-weight:700; }
+.notice-input-area { padding:14px 20px; border-bottom:1px solid #f0f0f4; display:flex; gap:10px; align-items:flex-start; }
+.notice-textarea { flex:1; border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); resize:none; outline:none; min-height:64px; transition:border-color 0.15s; }
+.notice-textarea:focus { border-color:var(--pink); }
+.btn-notice-post { background:var(--pink); color:white; border:none; border-radius:10px; padding:10px 16px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Noto Sans KR',sans-serif; white-space:nowrap; align-self:flex-end; transition:background 0.15s; }
+.btn-notice-post:hover { background:var(--pink-hover); }
+.notice-list { }
+.notice-item { padding:14px 20px; border-bottom:1px solid #f5f5f8; display:flex; gap:12px; align-items:flex-start; }
+.notice-item:last-child { border-bottom:none; }
+.notice-item.unread { background:#fffbfc; }
+.notice-num { font-size:11px; color:#ccc; font-weight:700; min-width:20px; margin-top:2px; }
+.notice-body { flex:1; }
+.notice-content { font-size:13px; color:var(--text); line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+.notice-meta { font-size:11px; color:var(--subtle); margin-top:5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.notice-new-badge { background:var(--pink); color:white; font-size:9px; font-weight:700; padding:1px 6px; border-radius:6px; }
+.btn-notice-del { background:none; border:none; color:#ddd; font-size:12px; cursor:pointer; padding:2px 4px; transition:color 0.15s; flex-shrink:0; margin-top:1px; }
+.btn-notice-del:hover { color:#e05555; }
+.notice-empty { padding:32px 20px; text-align:center; color:var(--subtle); font-size:13px; }
+
+.log-section { background:white; border-radius:14px; border:1px solid var(--border); overflow:hidden; }
+.log-header { padding:14px 20px; border-bottom:1px solid #f0f0f4; display:flex; align-items:center; justify-content:space-between; }
+.log-title-txt { font-size:13px; font-weight:700; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.log-locked { font-size:10px; background:#f5f5f5; color:#aaa; padding:2px 8px; border-radius:8px; font-weight:700; }
+.log-item { padding:10px 20px; border-bottom:1px solid #f8f8f8; display:flex; gap:10px; align-items:flex-start; }
+.log-item:last-child { border-bottom:none; }
+.log-time  { font-size:11px; color:var(--subtle); white-space:nowrap; min-width:110px; }
+.log-body  { font-size:11px; color:var(--muted); flex:1; line-height:1.5; }
+.log-device{ font-size:10px; color:#bbb; }
+.log-empty { padding:20px; text-align:center; color:#ccc; font-size:12px; }
+
+/* LOADING OVERLAY */
+#loadingOverlay { position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+.loading-spinner { width:36px; height:36px; border:3px solid #f0e0e4; border-top-color:var(--pink); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg) } }
+.loading-text { font-size:13px; color:var(--muted); font-weight:600; }
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+  body { flex-direction:column; height:auto; overflow:auto; }
+  .sidebar { width:100%; height:auto; flex-direction:row; flex-wrap:wrap; padding:8px 10px; border-right:none; border-bottom:1px solid var(--border); gap:4px; overflow-y:visible; justify-content:center; }
+  .sb-logo, .sb-name, .sb-date, .sb-cal, .sb-action-row, .sb-section-label { display:none; }
+  .sb-menu-btn { padding:6px 10px; font-size:10.5px; border-radius:16px; flex-shrink:0; width:auto; }
+  .main-area { min-height:0; }
+  .page { padding:12px 14px; }
+  .home-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .home-card.span2 { grid-column:span 2; }
+  .home-card { padding:12px 14px; }
+  .field-group { grid-template-columns:1fr; }
+  table { font-size:12px; }
+  thead th, tbody td { padding:8px 10px; }
+  .chart-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<aside class="sidebar">
+  <div class="sb-logo">🤸</div>
+  <div class="sb-name">원내 관리 시스템</div>
+  <div class="sb-date" id="sbDate"></div>
+
+  <!-- 미니 달력 -->
+  <div class="sb-cal">
+    <div class="sb-cal-header">
+      <button class="sb-cal-nav" id="calPrev">‹</button>
+      <span class="sb-cal-month" id="calTitle"></span>
+      <button class="sb-cal-nav" id="calNext">›</button>
+    </div>
+    <div class="sb-cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="sb-action-row">
+    <button class="sb-act-btn sb-act-backup">💾 백업</button>
+    <button class="sb-act-btn sb-act-load">📥 불러오기</button>
+  </div>
+
+  <button class="sb-menu-btn active" data-page="home" onclick="showPage('home',this)">📅 Today</button>
+
+  <div class="sb-section-label">신환</div>
+  <button class="sb-menu-btn" data-page="shin-dash"    onclick="showPage('shin-dash',this)">신환내원경로</button>
+  <button class="sb-menu-btn" data-page="shin-reg"     onclick="showPage('shin-reg',this)">신환 등록</button>
+  <button class="sb-menu-btn" data-page="shin-list"    onclick="showPage('shin-list',this)">신환 목록</button>
+  <button class="sb-menu-btn" data-page="shin-stats"   onclick="showPage('shin-stats',this)">통계</button>
+  <button class="sb-menu-btn" data-page="shin-jiin"    onclick="showPage('shin-jiin',this)">지인 랭킹</button>
+  <button class="sb-menu-btn" data-page="shin-partner" onclick="showPage('shin-partner',this)">협력업체</button>
+
+  <div class="sb-section-label">탕약</div>
+  <button class="sb-menu-btn teal" data-page="tang-dash" onclick="showPage('tang-dash',this)">탕약 대시보드</button>
+  <button class="sb-menu-btn teal" data-page="tang-reg"  onclick="showPage('tang-reg',this)">탕약 환자 등록</button>
+  <button class="sb-menu-btn teal" data-page="tang-list" onclick="showPage('tang-list',this)">탕약 목록</button>
+
+  <div class="sb-section-label">기타</div>
+  <button class="sb-menu-btn green" data-page="plant-main" onclick="showPage('plant-main',this)">화분관리</button>
+</aside>
+
+<div class="main-area">
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════
+     HOME (Today 그리드 대시보드)
+════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="home-grid">
+
+    <!-- Today 카드 -->
+    <div class="home-card">
+      <div class="home-card-title">Today</div>
+      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:2px;" id="hTodayDate"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;" id="hTodayDow"></div>
+      <div id="hTodayContent"></div>
+    </div>
+
+    <!-- 신환 내원경로 카드 -->
+    <div class="home-card">
+      <div class="home-card-title">신환 내원경로</div>
+      <div id="hRouteContent" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+
+    <!-- 탕약처방 관리 카드 -->
+    <div class="home-card">
+      <div class="home-card-title">탕약처방 관리</div>
+      <div id="hTangContent"></div>
+    </div>
+
+    <!-- 공지사항 카드 -->
+    <div class="home-card span2">
+      <div class="home-card-title" style="text-align:left;display:flex;align-items:center;justify-content:space-between;">
+        <span>📢 중요 공지사항</span>
+        <span id="noticeCountBadge" style="font-size:10px;background:var(--pink-light);color:var(--pink);padding:2px 8px;border-radius:10px;font-weight:700;">0</span>
+      </div>
+      <div class="notice-input-area" style="padding:0 0 10px;border-bottom:1px solid #f0f0f4;margin-bottom:10px;">
+        <textarea class="notice-textarea" id="noticeInput" placeholder="공지사항을 입력하세요..." rows="2" style="min-height:52px;"></textarea>
+        <button class="btn-notice-post" onclick="postNotice()">등록</button>
+      </div>
+      <div class="notice-list" id="noticeList" style="max-height:220px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- 화분관리 카드 -->
+    <div class="home-card">
+      <div class="home-card-title">화분관리</div>
+      <div id="hPlantContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 삭제 로그 (Today 페이지 하단 별도) -->
+<div class="page" id="page-today-main">
+  <div class="sec-header"><div class="sec-title">📅 Today 상세</div></div>
+  <div class="notice-card">
+    <div class="notice-header">
+      <div class="notice-title-txt">📢 중요 공지사항 <span class="notice-count" id="noticeCount2">0</span></div>
+    </div>
+    <div class="notice-input-area">
+      <textarea class="notice-textarea" id="noticeInput2" placeholder="공지사항을 입력하세요..." rows="2"></textarea>
+      <button class="btn-notice-post" onclick="postNotice2()">등록</button>
+    </div>
+    <div class="notice-list" id="noticeList2"></div>
+  </div>
+  <div class="log-section">
+    <div class="log-header">
+      <div class="log-title-txt">🔒 삭제 내역 로그 <span style="font-size:11px;color:#bbb;font-weight:400;">(3개월 자동 보관)</span></div>
+      <span class="log-locked">수정 불가</span>
+    </div>
+    <div id="noticeLogList"><div class="log-empty">삭제 내역이 없습니다</div></div>
+  </div>
+</div>
+
+<!-- 신환 등록 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-title">✏️ 신환 등록</div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px;">내원 경로를 선택하세요</div>
+    <div class="modal-route-grid" id="modalRouteGrid"></div>
+    <div id="modalJiinWrap" style="display:none;margin-bottom:12px;">
+      <div class="jiin-input-wrap">
+        <span class="jiin-label">🤝 지인 이름</span>
+        <input class="jiin-input" id="modalJiinName" placeholder="소개해 주신 분 성함">
+      </div>
+    </div>
+    <div id="modalEtcWrap" style="display:none;margin-bottom:12px;">
+      <div class="jiin-input-wrap">
+        <span class="etc-label">📌 상세내용</span>
+        <input class="etc-input" id="modalEtcMemo" placeholder="기타 내원 경로 상세 내용">
+      </div>
+    </div>
+    <div id="modalPartnerWrap" style="display:none;margin-bottom:12px;">
+      <div class="jiin-input-wrap">
+        <span class="partner-label">🏢 협력업체명</span>
+        <input class="partner-input" id="modalPartnerName" placeholder="협력업체 이름">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-primary" onclick="submitModal()">✓ 등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     신환 - 대시보드
+════════════════════════════════════ -->
+<div class="page" id="page-shin-dash">
+  <div class="sec-header">
+    <div><div class="sec-title">신환 내원경로 대시보드</div><div class="sec-sub" id="dashSub"></div></div>
+    <button class="btn-primary" onclick="openModal()">＋ 신환 등록</button>
+  </div>
+  <div class="stat-grid" id="statGrid"></div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">이번 달 내원경로 현황</div>
+    <div class="route-grid" id="dashRouteBar"></div>
+    <div class="chart-wrap" style="height:180px;"><canvas id="dashDonut"></canvas></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">최근 등록 신환</div>
+    <div id="recentList"></div>
+  </div>
+</div>
+
+<!-- 신환 - 등록 -->
+<div class="page" id="page-shin-reg">
+  <div class="sec-header"><div class="sec-title">신환 등록</div></div>
+  <div class="form-card">
+    <div class="form-title">📋 내원경로 선택</div>
+    <div class="route-grid" id="regRouteGrid"></div>
+    <div id="jiinInputWrap" style="display:none;">
+      <div class="jiin-input-wrap">
+        <span class="jiin-label">🤝 지인 이름</span>
+        <input class="jiin-input" id="jiinNameInput" placeholder="소개해 주신 분 성함">
+      </div>
+    </div>
+    <div id="etcInputWrap" style="display:none;">
+      <div class="jiin-input-wrap">
+        <span class="etc-label">📌 상세내용</span>
+        <input class="etc-input" id="etcMemoInput" placeholder="기타 내원 경로 상세 내용">
+      </div>
+    </div>
+    <div id="partnerInputWrap" style="display:none;">
+      <div class="jiin-input-wrap">
+        <span class="partner-label">🏢 협력업체명</span>
+        <input class="partner-input" id="partnerNameInput" placeholder="협력업체 이름">
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="btn-primary" onclick="registerPatient()">✓ 등록하기</button>
+      <button class="btn-ghost"   onclick="resetForm()">초기화</button>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--muted);padding:0 4px;">💡 경로를 선택한 뒤 등록하기를 누르면 오늘 날짜로 자동 저장됩니다.</div>
+</div>
+
+<!-- 신환 - 목록 -->
+<div class="page" id="page-shin-list">
+  <div class="sec-header">
+    <div class="sec-title">신환 목록</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <select class="month-select" id="listMonthFilter" onchange="renderShinList()"><option value="all">전체</option></select>
+      <button class="btn-ghost" onclick="exportShinCSV()">📥 CSV</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrap">
+      <table><thead><tr><th>번호</th><th>내원경로</th><th>등록일</th><th></th></tr></thead>
+      <tbody id="shinListBody"></tbody></table>
+    </div>
+    <div id="shinListEmpty" class="empty" style="display:none;"><div class="empty-icon">📋</div>등록된 신환이 없습니다</div>
+  </div>
+</div>
+
+<!-- 신환 - 통계 -->
+<div class="page" id="page-shin-stats">
+  <div class="sec-header">
+    <div class="sec-title">신환 통계</div>
+    <select class="month-select" id="statsYearFilter" onchange="renderStats()"></select>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card"><div class="chart-title">월별 신환 수</div><div class="chart-wrap"><canvas id="monthlyBar"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">경로별 비율 (연간)</div><div class="chart-wrap"><canvas id="routePie"></canvas></div></div>
+    <div class="chart-card" style="grid-column:1/-1;"><div class="chart-title">월별 경로별 추이</div><div class="chart-wrap" style="height:260px;"><canvas id="routeLine"></canvas></div></div>
+  </div>
+  <div class="card" id="etcDetailCard">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">📌 기타 내원경로 상세 목록</div>
+    <div class="table-wrap">
+      <table><thead><tr><th>번호</th><th>상세내용</th><th>등록일</th></tr></thead>
+      <tbody id="etcDetailBody"></tbody></table>
+    </div>
+    <div id="etcDetailEmpty" class="empty" style="display:none;"><div class="empty-icon">📌</div>기타 경로 등록 내역이 없습니다</div>
+  </div>
+</div>
+
+<!-- 신환 - 지인 랭킹 -->
+<div class="page" id="page-shin-jiin">
+  <div class="sec-header">
+    <div><div class="sec-title">지인 소개 랭킹</div><div class="sec-sub">지인별 누적 소개 환자 수</div></div>
+  </div>
+  <div class="stat-grid" id="jiinStatGrid"></div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">소개자 순위</div>
+    <div id="jiinRankList"></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">지인 소개 전체 목록</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>번호</th><th>소개자</th><th>등록일</th></tr></thead>
+        <tbody id="jiinDetailBody"></tbody>
+      </table>
+    </div>
+    <div id="jiinDetailEmpty" class="empty" style="display:none;"><div class="empty-icon">🤝</div>지인 소개 신환이 없습니다</div>
+  </div>
+</div>
+<div class="page" id="page-shin-partner">
+  <div class="sec-header">
+    <div><div class="sec-title">협력업체 랭킹</div><div class="sec-sub">협력업체별 누적 소개 환자 수</div></div>
+  </div>
+  <div class="stat-grid" id="partnerStatGrid"></div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">협력업체 순위</div>
+    <div id="partnerRankList"></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px;">협력업체 소개 전체 목록</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>번호</th><th>협력업체</th><th>등록일</th></tr></thead>
+        <tbody id="partnerDetailBody"></tbody>
+      </table>
+    </div>
+    <div id="partnerDetailEmpty" class="empty" style="display:none;"><div class="empty-icon">🏢</div>협력업체 소개 신환이 없습니다</div>
+  </div>
+</div>
+<div class="page" id="page-tang-dash">
+  <div class="sec-header">
+    <div><div class="sec-title">탕약 환자 대시보드</div></div>
+    <button class="btn-teal" onclick="showPage('tang-reg', document.querySelector('[data-page=tang-reg]'), 'teal')">＋ 환자 등록</button>
+  </div>
+
+  <!-- 오늘 해피콜 알림 -->
+  <div id="tangAlerts"></div>
+
+  <div class="stat-grid" id="tangStatGrid"></div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;">진행 중인 환자</div>
+    <div id="tangActivelist"></div>
+  </div>
+</div>
+
+<!-- 탕약 - 등록 -->
+<div class="page" id="page-tang-reg">
+  <div class="sec-header"><div class="sec-title">탕약 환자 등록</div></div>
+  <div class="form-card-teal">
+    <div class="form-title-teal">🌿 환자 정보 입력</div>
+    <div class="field-group">
+      <div class="field">
+        <label class="field-label">환자 성함 *</label>
+        <input class="field-input" id="tName" placeholder="홍길동" oninput="updateCallPreview()">
+      </div>
+      <div class="field">
+        <label class="field-label">차트 번호 *</label>
+        <input class="field-input" id="tChart" placeholder="예: 2024-001" oninput="updateCallPreview()">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label class="field-label">처방 일수 *</label>
+      <div class="dose-row" style="margin-top:6px;">
+        <button class="dose-btn" id="dose15" onclick="selectDose(15)">🌿 15일분</button>
+        <button class="dose-btn" id="dose30" onclick="selectDose(30)">🌿🌿 30일분</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label class="field-label">등록일 (기본: 오늘)</label>
+      <input type="date" class="field-input" id="tRegDate" oninput="updateCallPreview()">
+    </div>
+
+    <!-- 해피콜 날짜 미리보기 -->
+    <div class="call-preview" id="callPreview">
+      <div class="call-preview-title">📞 자동 계산된 해피콜 일정</div>
+      <div id="callPreviewBody"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-teal"  onclick="registerTang()">✓ 등록하기</button>
+      <button class="btn-ghost" onclick="resetTangForm()">초기화</button>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--muted);padding:0 4px;">
+    💡 도착 해피콜: 등록일 +3일 / 예약 해피콜: 15일분 → +13일, 30일분 → +27일
+  </div>
+</div>
+
+<!-- 탕약 - 목록 -->
+<div class="page" id="page-tang-list">
+  <div class="sec-header">
+    <div class="sec-title">탕약 환자 목록</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <select class="month-select" id="tangStatusFilter" onchange="renderTangList()">
+        <option value="all">전체</option>
+        <option value="active">진행중</option>
+        <option value="done">완료</option>
+      </select>
+      <button class="btn-ghost" onclick="exportTangCSV()">📥 CSV</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>번호</th><th>성함</th><th>차트</th><th>일수</th>
+          <th>등록일</th><th>도착 해피콜</th><th>예약 해피콜</th>
+          <th>상태</th><th></th>
+        </tr></thead>
+        <tbody id="tangListBody"></tbody>
+      </table>
+    </div>
+    <div id="tangListEmpty" class="empty" style="display:none;"><div class="empty-icon">🌿</div>등록된 탕약 환자가 없습니다</div>
+  </div>
+</div>
+
+<!-- 화분 관리 -->
+<div class="page" id="page-plant-main">
+  <div class="sec-header">
+    <div><div class="sec-title">🪴 화분 관리</div><div class="sec-sub">물주기 주기 알림</div></div>
+    <button class="btn-primary" style="background:var(--green);" onclick="togglePlantForm()">＋ 화분 등록</button>
+  </div>
+
+  <!-- 등록 폼 -->
+  <div class="plant-reg-form" id="plantRegForm" style="display:none;">
+    <div class="plant-reg-title">🌱 새 화분 등록</div>
+    <div class="field-group">
+      <div class="field">
+        <label class="field-label">화분 이름 *</label>
+        <input class="field-input" id="plantNameInput" placeholder="예: 몬스테라" style="border-color:#a5d6a7;">
+      </div>
+      <div class="field">
+        <label class="field-label">물주기 주기 *</label>
+        <div class="plant-cycle-btns" id="plantCycleBtns" style="margin-top:6px;">
+          <button class="cycle-btn" onclick="selectCycle(10)">10일</button>
+          <button class="cycle-btn" onclick="selectCycle(20)">20일</button>
+          <button class="cycle-btn" onclick="selectCycle(30)">30일</button>
+          <button class="cycle-btn" onclick="selectCycle(60)">2개월</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" style="background:var(--green);" onclick="registerPlant()">✓ 등록</button>
+      <button class="btn-ghost" onclick="togglePlantForm()">취소</button>
+    </div>
+  </div>
+
+  <!-- 알림 배너 -->
+  <div id="plantAlerts"></div>
+
+  <!-- 화분 리스트 -->
+  <div class="plant-list-wrap" id="plantListWrap">
+    <div class="plant-grid" id="plantGrid"></div>
+  </div>
+  <div id="plantEmpty" class="empty" style="display:none;">
+    <div class="empty-icon">🪴</div>
+    등록된 화분이 없습니다<br>
+    <span style="font-size:11px;color:#bbb;margin-top:4px;display:block;">화분 등록 버튼을 눌러 추가하세요</span>
+  </div>
+</div>
+
+</div><!-- /main-area -->
+
+<script>
+// ══════════════════════════════════════
+// CONSTANTS & DATA (moved to Firebase block above)
+// ══════════════════════════════════════
+// (patients, tangPts, plants, notices, noticeLogs loaded by initApp)
+
+// ══════════════════════════════════════
+// 🔧 Firebase 설정 — 여기에 붙여넣으세요
+// ══════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDEkUyu2ie19DWZlKLoC1fMjcLZ2LEPteQ",
+  authDomain: "in-nature-3b3c8.firebaseapp.com",
+  databaseURL: "https://in-nature-3b3c8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "in-nature-3b3c8",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+// Firebase 초기화
+let db = null
+let fbReady = false
+try {
+  firebase.initializeApp(firebaseConfig)
+  db = firebase.database()
+} catch(e) { console.warn('Firebase 초기화 실패:', e) }
+
+// Firebase 저장/불러오기 헬퍼
+async function fbSet(path, data) {
+  if (!db) return
+  try { await db.ref(path).set(data) } catch(e) { console.error('fbSet:', e) }
+}
+async function fbGet(path) {
+  if (!db) return null
+  try { const snap = await db.ref(path).once('value'); return snap.exists() ? snap.val() : null }
+  catch(e) { console.error('fbGet:', e); return null }
+}
+function fbListen(path, cb) {
+  if (!db) return
+  db.ref(path).on('value', snap => cb(snap.exists() ? snap.val() : null))
+}
+
+// 데이터 변수
+const ROUTES = ['간판','인터넷','블로그','인스타','지인','AI','협력업체','기타']
+const ROUTE_COLORS = { '간판':'#e07030','인터넷':'#4a7fe5','블로그':'#27ae60','인스타':'#c2185b','지인':'#9b59b6','AI':'#0097a7','협력업체':'#00695c','기타':'#78909c' }
+const DAYS_KO = ['일','월','화','수','목','금','토']
+
+let patients   = []
+let tangPts    = []
+let plants     = []
+let notices    = []
+let noticeLogs = []
+let selectedRoute = null
+let modalRoute    = null
+let selectedDose  = null
+let selectedCycle = null
+let charts = {}
+
+const now = new Date()
+const todayStr = now.toISOString().slice(0,10)
+
+// 저장 함수
+function saveP()       { fbSet('patients',   patients);   localStorage.setItem('shinwhan_patients', JSON.stringify(patients)) }
+function saveTang()    { fbSet('tangPts',    tangPts);    localStorage.setItem('tang_patients',     JSON.stringify(tangPts))  }
+function savePlants()  { fbSet('plants',     plants);     localStorage.setItem('plants',            JSON.stringify(plants))   }
+function saveNotices() { fbSet('notices',    notices);    localStorage.setItem('notices',           JSON.stringify(notices))  }
+function saveLogs()    { fbSet('noticeLogs', noticeLogs); localStorage.setItem('notice_logs',       JSON.stringify(noticeLogs)) }
+
+// 오래된 로그 정리
+function cleanOldLogs() {
+  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 3)
+  const before = noticeLogs.length
+  noticeLogs = noticeLogs.filter(l => new Date(l.deletedAt) > cutoff)
+  if (noticeLogs.length !== before) saveLogs()
+}
+
+// val → array 변환 헬퍼
+function toArr(val) {
+  if (!val) return []
+  return Array.isArray(val) ? val.filter(Boolean) : Object.values(val).filter(Boolean)
+}
+
+// 실시간 리스너 (다른 기기 변경 자동 반영)
+function setupRealtimeListeners() {
+  fbListen('patients',   v => { patients   = toArr(v); if(fbReady) safeRenderCurrent() })
+  fbListen('tangPts',    v => { tangPts    = toArr(v); if(fbReady) safeRenderCurrent() })
+  fbListen('plants',     v => { plants     = toArr(v); if(fbReady) safeRenderCurrent() })
+  fbListen('notices',    v => { notices    = toArr(v); if(fbReady) safeRenderCurrent() })
+  fbListen('noticeLogs', v => { noticeLogs = toArr(v); cleanOldLogs(); if(fbReady) { try { renderNoticeLogs() } catch(e){} } })
+}
+
+function safeRenderCurrent() {
+  const active = document.querySelector('.page.active')
+  if (!active) return
+  const id = active.id.replace('page-','')
+  try {
+    if (id==='home')       renderHome()
+    if (id==='shin-dash')  renderShinDash()
+    if (id==='shin-list')  renderShinList()
+    if (id==='tang-dash')  renderTangDash()
+    if (id==='tang-list')  renderTangList()
+    if (id==='plant-main') renderPlants()
+  } catch(e) {}
+}
+
+function showLoading(show) {
+  const el = document.getElementById('loadingOverlay')
+  if (el) el.style.display = show ? 'flex' : 'none'
+}
+
+// 초기 데이터 로드
+async function initApp() {
+  showLoading(true)
+  try {
+    const [p, t, pl, n, nl] = await Promise.all([
+      fbGet('patients'), fbGet('tangPts'), fbGet('plants'),
+      fbGet('notices'),  fbGet('noticeLogs')
+    ])
+    patients   = toArr(p);  tangPts = toArr(t); plants = toArr(pl)
+    notices    = toArr(n);  noticeLogs = toArr(nl)
+    cleanOldLogs()
+  } catch(e) {
+    console.warn('Firebase 로드 실패, 로컬 캐시 사용')
+    patients   = JSON.parse(localStorage.getItem('shinwhan_patients') || '[]')
+    tangPts    = JSON.parse(localStorage.getItem('tang_patients')     || '[]')
+    plants     = JSON.parse(localStorage.getItem('plants')            || '[]')
+    notices    = JSON.parse(localStorage.getItem('notices')           || '[]')
+    noticeLogs = JSON.parse(localStorage.getItem('notice_logs')       || '[]')
+  }
+  showLoading(false)
+  // 데이터 로드 완료 후 현재 페이지 다시 렌더링
+  try { renderHome() } catch(e) {}
+  try { buildRegRouteGrid() } catch(e) {}
+  try { renderModalGrid()   } catch(e) {}
+  try { initTangForm()      } catch(e) {}
+  const years0=[...new Set(patients.map(p=>p.date.slice(0,4)))].sort().reverse()
+  if (!years0.length) years0.push(String(now.getFullYear()))
+  const ysEl = document.getElementById('statsYearFilter')
+  if (ysEl) ysEl.innerHTML = years0.map(y=>`<option value="${y}">${y}년</option>`).join('')
+  const months0=[...new Set(patients.map(p=>p.date.slice(0,7)))].sort().reverse()
+  const mfEl = document.getElementById('listMonthFilter')
+  if (mfEl) mfEl.innerHTML='<option value="all">전체</option>'+months0.map(m=>`<option value="${m}">${m.replace('-','년 ')}월</option>`).join('')
+  setupRealtimeListeners()
+  fbReady = true
+}
+
+initApp()
+
+// ══════════════════════════════════════
+// SIDEBAR CALENDAR (전역 - 즉시 실행)
+// ══════════════════════════════════════
+let calYear = now.getFullYear(), calMonth = now.getMonth()
+function renderCal() {
+  const dows = ['일','월','화','수','목','금','토']
+  const calTitleEl = document.getElementById('calTitle')
+  if (!calTitleEl) return
+  calTitleEl.textContent = `${calYear}.${String(calMonth+1).padStart(2,'0')}`
+  const grid = document.getElementById('calGrid'); grid.innerHTML = ''
+  dows.forEach((d,i)=>{ const el=document.createElement('div'); el.className='sb-cal-dow'+(i===0?' sun':i===6?' sat':''); el.textContent=d; grid.appendChild(el) })
+  const firstDay=new Date(calYear,calMonth,1).getDay(), lastDate=new Date(calYear,calMonth+1,0).getDate(), prevLast=new Date(calYear,calMonth,0).getDate()
+  for(let i=firstDay-1;i>=0;i--){ const el=document.createElement('div'); el.className='sb-cal-day other'; el.textContent=prevLast-i; grid.appendChild(el) }
+  for(let d=1;d<=lastDate;d++){ const el=document.createElement('div'); const dow=new Date(calYear,calMonth,d).getDay(); let cls='sb-cal-day'+(dow===0?' sun':dow===6?' sat':''); if(d===now.getDate()&&calMonth===now.getMonth()&&calYear===now.getFullYear()) cls+=' today'; el.className=cls; el.textContent=d; grid.appendChild(el) }
+}
+document.getElementById('calPrev').addEventListener('click',()=>{ calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCal() })
+document.getElementById('calNext').addEventListener('click',()=>{ calMonth++;if(calMonth>11){calMonth=0;calYear++}renderCal() })
+renderCal()
+document.getElementById('sbDate').textContent = now.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})
+
+// ══════════════════════════════════════
+// NAV / SHOWPAGE (전역 - 즉시 사용 가능)
+// ══════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  const target = document.getElementById('page-' + name)
+  if (!target) { console.warn('page not found:', name); return }
+  target.classList.add('active')
+  document.querySelectorAll('.sb-menu-btn').forEach(b => b.classList.remove('active'))
+  if (btn) btn.classList.add('active')
+  try {
+    if (name === 'home')         renderHome()
+    if (name === 'shin-dash')    renderShinDash()
+    if (name === 'shin-list')    renderShinList()
+    if (name === 'shin-stats')   renderStats()
+    if (name === 'shin-jiin')    renderJiinRanking()
+    if (name === 'shin-partner') renderPartnerRanking()
+    if (name === 'tang-dash')    renderTangDash()
+    if (name === 'tang-list')    renderTangList()
+    if (name === 'tang-reg')     initTangForm()
+    if (name === 'plant-main')   renderPlants()
+    if (name === 'today-main')   renderToday()
+  } catch(e) { console.error('showPage render error:', name, e) }
+}
+
+// 시작 페이지 설정 (데이터 없어도 즉시 표시)
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+document.getElementById('page-home').classList.add('active')
+document.querySelectorAll('.sb-menu-btn').forEach(b=>b.classList.remove('active'))
+const homeBtn = document.querySelector('[data-page="home"]')
+if (homeBtn) homeBtn.classList.add('active')
+
+// ══════════════════════════════════════
+// 신환 MODAL
+// ══════════════════════════════════════
+function openModal()  { modalRoute=null; renderModalGrid(); document.getElementById('modalBg').classList.add('show') }
+function closeModal() { document.getElementById('modalBg').classList.remove('show') }
+function renderModalGrid() {
+  document.getElementById('modalRouteGrid').innerHTML = ROUTES.map(r => `
+    <div class="modal-rb rb-${r} ${modalRoute===r?'selected':''}"
+      style="${modalRoute===r?'background:'+ROUTE_COLORS[r]+';':''}"
+      onclick="selectModalRoute('${r}')">
+      ${routeEmoji(r)} ${r}
+    </div>`).join('')
+  document.getElementById('modalJiinWrap').style.display    = modalRoute==='지인'    ? 'block' : 'none'
+  document.getElementById('modalEtcWrap').style.display     = modalRoute==='기타'    ? 'block' : 'none'
+  document.getElementById('modalPartnerWrap').style.display = modalRoute==='협력업체' ? 'block' : 'none'
+}
+function selectModalRoute(r) {
+  modalRoute=r
+  renderModalGrid()
+  const focusMap = { '지인':'modalJiinName', '기타':'modalEtcMemo', '협력업체':'modalPartnerName' }
+  if (focusMap[r]) setTimeout(()=>document.getElementById(focusMap[r]).focus(), 50)
+}
+function submitModal() {
+  if (!modalRoute) { showToast('경로를 선택해 주세요'); return }
+  const jiinName    = modalRoute==='지인'    ? document.getElementById('modalJiinName').value.trim()    : ''
+  const etcMemo     = modalRoute==='기타'    ? document.getElementById('modalEtcMemo').value.trim()     : ''
+  const partnerName = modalRoute==='협력업체' ? document.getElementById('modalPartnerName').value.trim() : ''
+  if (modalRoute==='지인'    && !jiinName)    { showToast('지인 이름을 입력해 주세요'); return }
+  if (modalRoute==='협력업체' && !partnerName) { showToast('협력업체명을 입력해 주세요'); return }
+  addPatient(modalRoute, jiinName, etcMemo, partnerName)
+  document.getElementById('modalJiinName').value    = ''
+  document.getElementById('modalEtcMemo').value     = ''
+  document.getElementById('modalPartnerName').value = ''
+  closeModal()
+}
+
+// ══════════════════════════════════════
+// 신환 등록
+// ══════════════════════════════════════
+function buildRegRouteGrid() {
+  document.getElementById('regRouteGrid').innerHTML = ROUTES.map(r => `
+    <div class="route-badge rb-${r} ${selectedRoute===r?'selected':''}"
+      style="${selectedRoute===r?'background:'+ROUTE_COLORS[r]+';color:white;':''}"
+      onclick="selectRoute('${r}')">
+      ${routeEmoji(r)} ${r}
+    </div>`).join('')
+  const jiinWrap    = document.getElementById('jiinInputWrap')
+  const etcWrap     = document.getElementById('etcInputWrap')
+  const partnerWrap = document.getElementById('partnerInputWrap')
+  if (jiinWrap)    jiinWrap.style.display    = selectedRoute==='지인'    ? 'block' : 'none'
+  if (etcWrap)     etcWrap.style.display     = selectedRoute==='기타'    ? 'block' : 'none'
+  if (partnerWrap) partnerWrap.style.display = selectedRoute==='협력업체' ? 'block' : 'none'
+}
+function selectRoute(r) {
+  selectedRoute=r; buildRegRouteGrid()
+  const focusMap = { '지인':'jiinNameInput', '기타':'etcMemoInput', '협력업체':'partnerNameInput' }
+  if (focusMap[r]) setTimeout(()=>{ const el=document.getElementById(focusMap[r]); if(el) el.focus() },50)
+}
+function resetForm() {
+  selectedRoute=null
+  ;['jiinNameInput','etcMemoInput','partnerNameInput'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' })
+  buildRegRouteGrid()
+}
+function registerPatient() {
+  if (!selectedRoute) { showToast('경로를 선택해 주세요'); return }
+  const jiinName    = selectedRoute==='지인'    ? (document.getElementById('jiinNameInput').value.trim())    : ''
+  const etcMemo     = selectedRoute==='기타'    ? (document.getElementById('etcMemoInput').value.trim())     : ''
+  const partnerName = selectedRoute==='협력업체' ? (document.getElementById('partnerNameInput').value.trim()) : ''
+  if (selectedRoute==='지인'    && !jiinName)    { showToast('지인 이름을 입력해 주세요'); return }
+  if (selectedRoute==='협력업체' && !partnerName) { showToast('협력업체명을 입력해 주세요'); return }
+  addPatient(selectedRoute, jiinName, etcMemo, partnerName); resetForm()
+}
+function addPatient(route, jiinName='', etcMemo='', partnerName='') {
+  patients.push({ id:Date.now(), route, jiinName, etcMemo, partnerName, date:todayStr })
+  saveP()
+  const extra = jiinName||partnerName||etcMemo
+  showToast(`✓ ${route}${extra?' ('+extra+')':''} 경로로 신환 등록!`)
+  renderShinDash()
+}
+function deletePatient(id) {
+  const numId = Number(id)
+  patients = patients.filter(p=>Number(p.id)!==numId)
+  saveP(); renderShinList(); renderShinDash()
+  showToast('삭제되었습니다')
+}
+
+// ══════════════════════════════════════
+// 신환 대시보드
+// ══════════════════════════════════════
+function renderShinDash() {
+  const thisMonth = todayStr.slice(0,7)
+  const monthly = patients.filter(p=>p.date.startsWith(thisMonth))
+  const total   = patients.length
+  const topRoute = (() => {
+    const cnt={}; patients.forEach(p=>cnt[p.route]=(cnt[p.route]||0)+1)
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0]||'-'
+  })()
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">전체 신환</div><div class="stat-value">${total}</div><div class="stat-sub">명 누적</div></div>
+    <div class="stat-card"><div class="stat-label">이번 달</div><div class="stat-value" style="color:var(--pink)">${monthly.length}</div><div class="stat-sub">명</div></div>
+    <div class="stat-card"><div class="stat-label">주요 경로</div><div class="stat-value" style="font-size:17px;padding-top:4px;">${routeEmoji(topRoute)} ${topRoute}</div><div class="stat-sub">가장 많음</div></div>`
+
+  const cnt={}; ROUTES.forEach(r=>cnt[r]=0)
+  monthly.forEach(p=>cnt[p.route]=(cnt[p.route]||0)+1)
+  const total2 = monthly.length||1
+  document.getElementById('dashRouteBar').innerHTML = ROUTES.map(r=>`
+    <div class="route-badge rb-${r}" style="cursor:default;">
+      ${routeEmoji(r)} ${r} <strong>${cnt[r]||0}명</strong> <span style="opacity:0.6;">(${Math.round((cnt[r]||0)/total2*100)}%)</span>
+    </div>`).join('')
+
+  const labels=ROUTES.filter(r=>cnt[r]>0)
+  if (charts.dashDonut) charts.dashDonut.destroy()
+  if (labels.length) {
+    charts.dashDonut = new Chart(document.getElementById('dashDonut'), {
+      type:'doughnut',
+      data:{labels, datasets:[{data:labels.map(r=>cnt[r]), backgroundColor:labels.map(r=>ROUTE_COLORS[r]), borderWidth:2, borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'Noto Sans KR',size:12},padding:12}}}}
+    })
+  }
+
+  const recent = [...patients].sort((a,b)=>b.id-a.id).slice(0,5)
+  document.getElementById('recentList').innerHTML = recent.length
+    ? recent.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f8;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="route-tag rt-${p.route}">${routeEmoji(p.route)} ${p.route}</span>
+          ${p.route==='지인'&&p.jiinName       ? `<span style="font-size:11px;color:var(--c-지인);">· ${p.jiinName}</span>` : ''}
+          ${p.route==='협력업체'&&p.partnerName ? `<span style="font-size:11px;color:var(--c-협력업체);">· ${p.partnerName}</span>` : ''}
+          ${p.route==='기타'&&p.etcMemo        ? `<span style="font-size:11px;color:var(--c-기타);">· ${p.etcMemo}</span>` : ''}
+        </div>
+        <span style="font-size:12px;color:var(--muted);">${p.date}</span></div>`).join('')
+    : '<div style="color:var(--subtle);font-size:13px;padding:12px 0;">아직 등록된 신환이 없습니다</div>'
+}
+
+// ══════════════════════════════════════
+// 신환 목록
+// ══════════════════════════════════════
+function renderShinList() {
+  const sel = document.getElementById('listMonthFilter').value
+  const filtered = sel==='all' ? patients : patients.filter(p=>p.date.startsWith(sel))
+  const sorted = [...filtered].sort((a,b)=>b.id-a.id)
+  const months = [...new Set(patients.map(p=>p.date.slice(0,7)))].sort().reverse()
+  const mSel = document.getElementById('listMonthFilter')
+  const cur = mSel.value
+  mSel.innerHTML = '<option value="all">전체</option>' + months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${m.replace('-','년 ')}월</option>`).join('')
+  const tbody=document.getElementById('shinListBody'), empty=document.getElementById('shinListEmpty')
+  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return }
+  empty.style.display='none'
+  tbody.innerHTML = sorted.map((p,i)=>`<tr>
+    <td class="td-num">${sorted.length-i}</td>
+    <td>
+      <span class="route-tag rt-${p.route}">${routeEmoji(p.route)} ${p.route}</span>
+      ${p.route==='지인'&&p.jiinName       ? `<span style="font-size:11px;color:var(--c-지인);margin-left:5px;">· ${p.jiinName}</span>` : ''}
+      ${p.route==='협력업체'&&p.partnerName ? `<span style="font-size:11px;color:var(--c-협력업체);margin-left:5px;">· ${p.partnerName}</span>` : ''}
+      ${p.route==='기타'&&p.etcMemo        ? `<span style="font-size:11px;color:var(--c-기타);margin-left:5px;">· ${p.etcMemo}</span>` : ''}
+    </td>
+    <td class="td-date">${p.date}</td>
+    <td><button class="btn-danger" onclick="deletePatient(${p.id})">삭제</button></td>
+  </tr>`).join('')
+}
+
+// ══════════════════════════════════════
+// 신환 통계
+// ══════════════════════════════════════
+function renderStats() {
+  const years = [...new Set(patients.map(p=>p.date.slice(0,4)))].sort().reverse()
+  if (!years.length) years.push(String(now.getFullYear()))
+  const ySel = document.getElementById('statsYearFilter')
+  const cur = ySel.value || years[0]
+  ySel.innerHTML = years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>${y}년</option>`).join('')
+  const year = ySel.value||years[0]
+  const yearData = patients.filter(p=>p.date.startsWith(year))
+  const months = Array.from({length:12},(_,i)=>`${year}-${String(i+1).padStart(2,'0')}`)
+
+  if (charts.monthlyBar) charts.monthlyBar.destroy()
+  charts.monthlyBar = new Chart(document.getElementById('monthlyBar'),{
+    type:'bar',
+    data:{labels:months.map(m=>m.slice(5)+'월'),datasets:[{data:months.map(m=>yearData.filter(p=>p.date.startsWith(m)).length),backgroundColor:'#d0546a88',borderColor:'#d0546a',borderWidth:1.5,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  })
+
+  const routeCnt={}; ROUTES.forEach(r=>routeCnt[r]=0)
+  yearData.forEach(p=>routeCnt[p.route]=(routeCnt[p.route]||0)+1)
+  const rLabels=ROUTES.filter(r=>routeCnt[r]>0)
+  if (charts.routePie) charts.routePie.destroy()
+  charts.routePie = new Chart(document.getElementById('routePie'),{
+    type:'pie',
+    data:{labels:rLabels,datasets:[{data:rLabels.map(r=>routeCnt[r]),backgroundColor:rLabels.map(r=>ROUTE_COLORS[r]),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{family:'Noto Sans KR',size:12},padding:10}}}}
+  })
+
+  if (charts.routeLine) charts.routeLine.destroy()
+  charts.routeLine = new Chart(document.getElementById('routeLine'),{
+    type:'line',
+    data:{labels:months.map(m=>m.slice(5)+'월'),datasets:ROUTES.map(r=>({
+      label:r, data:months.map(m=>yearData.filter(p=>p.date.startsWith(m)&&p.route===r).length),
+      borderColor:ROUTE_COLORS[r], backgroundColor:ROUTE_COLORS[r]+'33',
+      tension:0.35, fill:false, pointRadius:4, borderWidth:2
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Noto Sans KR',size:12},padding:14,usePointStyle:true}}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  })
+
+  // 기타 상세 목록
+  const etcPts = patients.filter(p=>p.route==='기타' && p.date.startsWith(year))
+  const etcBody  = document.getElementById('etcDetailBody')
+  const etcEmpty = document.getElementById('etcDetailEmpty')
+  if (!etcPts.length) { etcBody.innerHTML=''; etcEmpty.style.display='block' }
+  else {
+    etcEmpty.style.display='none'
+    const etcSorted = [...etcPts].sort((a,b)=>b.id-a.id)
+    etcBody.innerHTML = etcSorted.map((p,i)=>`<tr>
+      <td class="td-num">${etcSorted.length-i}</td>
+      <td style="font-size:13px;">${p.etcMemo || '<span style="color:#bbb">내용 없음</span>'}</td>
+      <td class="td-date">${p.date}</td>
+    </tr>`).join('')
+  }
+}
+
+// ══════════════════════════════════════
+// 탕약 - DATE UTILS
+// ══════════════════════════════════════
+function addDays(dateStr, n) {
+  const d = new Date(dateStr); d.setDate(d.getDate()+n)
+  return d.toISOString().slice(0,10)
+}
+
+// ── 한국 공휴일 목록 (일요일 취급 → 직전 평일로 조정)
+// 토요일 · 대체공휴일은 그날 전화 OK
+const KR_HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-28','2025-01-29','2025-01-30',
+  '2025-03-01','2025-05-05','2025-05-06','2025-06-06',
+  '2025-08-15','2025-10-03','2025-10-06','2025-10-07','2025-10-08',
+  '2025-12-25',
+  // 2026
+  '2026-01-01','2026-01-28','2026-01-29','2026-01-30',
+  '2026-03-01','2026-03-02',
+  '2026-05-05','2026-05-25',
+  '2026-06-06','2026-08-17',
+  '2026-09-24','2026-09-25','2026-09-26',
+  '2026-10-03','2026-10-05','2026-10-09',
+  '2026-12-25',
+  // 2027
+  '2027-01-01','2027-01-27','2027-01-28','2027-01-29',
+  '2027-03-01','2027-05-05','2027-06-07',
+  '2027-08-16','2027-10-04','2027-10-05','2027-10-06',
+  '2027-10-11','2027-12-25',
+])
+
+// 일요일 또는 공휴일이면 직전 평일(토요일 제외)로 이동
+// 토요일, 대체공휴일은 그대로 유지
+function adjustCallDate(dateStr) {
+  const d = new Date(dateStr)
+  let adjusted = false
+  // 일요일(0) 이거나 공휴일이면 하루씩 앞으로
+  while (d.getDay() === 0 || KR_HOLIDAYS.has(d.toISOString().slice(0,10))) {
+    d.setDate(d.getDate() - 1)
+    adjusted = true
+  }
+  const result = d.toISOString().slice(0,10)
+  return { date: result, adjusted, original: dateStr }
+}
+function formatDateKo(dateStr) {
+  const d = new Date(dateStr)
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS_KO[d.getDay()]})`
+}
+function ddayLabel(dateStr) {
+  const diff = Math.round((new Date(dateStr)-new Date(todayStr))/(1000*60*60*24))
+  if (diff < 0)  return { label:`D+${Math.abs(diff)}`, cls:'dday-past' }
+  if (diff === 0) return { label:'D-Day', cls:'dday-today' }
+  if (diff <= 3)  return { label:`D-${diff}`, cls:'dday-soon' }
+  return { label:`D-${diff}`, cls:'dday-future' }
+}
+
+// ══════════════════════════════════════
+// 탕약 - 등록 폼
+// ══════════════════════════════════════
+function initTangForm() {
+  document.getElementById('tRegDate').value = todayStr
+  updateCallPreview()
+}
+function selectDose(n) {
+  selectedDose = n
+  document.getElementById('dose15').classList.toggle('selected', n===15)
+  document.getElementById('dose30').classList.toggle('selected', n===30)
+  updateCallPreview()
+}
+function updateCallPreview() {
+  const regDate = document.getElementById('tRegDate').value || todayStr
+  if (!selectedDose) { document.getElementById('callPreview').classList.remove('show'); return }
+  const arriveRaw = addDays(regDate, 3)
+  const resvRaw   = addDays(regDate, selectedDose===15 ? 13 : 27)
+  const arrive    = adjustCallDate(arriveRaw)
+  const resv      = adjustCallDate(resvRaw)
+  const ad = ddayLabel(arrive.date), rd = ddayLabel(resv.date)
+  document.getElementById('callPreviewBody').innerHTML = `
+    <div class="call-row">
+      <span class="call-type call-arrive">📦 도착 해피콜</span>
+      <div>
+        <div class="call-date-txt">${formatDateKo(arrive.date)}</div>
+        <div class="call-day-txt">등록일 +3일${arrive.adjusted ? ` <span style="color:#e05555;font-size:10px;">⚠️ 일요일/공휴일 → 조정됨</span>` : ''}</div>
+      </div>
+      <span class="call-dday ${ad.cls}">${ad.label}</span>
+    </div>
+    <div class="call-row">
+      <span class="call-type call-resv">📅 예약 해피콜</span>
+      <div>
+        <div class="call-date-txt">${formatDateKo(resv.date)}</div>
+        <div class="call-day-txt">등록일 +${selectedDose===15?13:27}일 (${selectedDose}일분)${resv.adjusted ? ` <span style="color:#e05555;font-size:10px;">⚠️ 일요일/공휴일 → 조정됨</span>` : ''}</div>
+      </div>
+      <span class="call-dday ${rd.cls}">${rd.label}</span>
+    </div>`
+  document.getElementById('callPreview').classList.add('show')
+}
+function resetTangForm() {
+  document.getElementById('tName').value  = ''
+  document.getElementById('tChart').value = ''
+  document.getElementById('tRegDate').value = todayStr
+  selectedDose = null
+  document.getElementById('dose15').classList.remove('selected')
+  document.getElementById('dose30').classList.remove('selected')
+  document.getElementById('callPreview').classList.remove('show')
+}
+function registerTang() {
+  const name    = document.getElementById('tName').value.trim()
+  const chart   = document.getElementById('tChart').value.trim()
+  const regDate = document.getElementById('tRegDate').value || todayStr
+  if (!name)         { showToast('환자 성함을 입력해 주세요'); return }
+  if (!chart)        { showToast('차트 번호를 입력해 주세요'); return }
+  if (!selectedDose) { showToast('처방 일수를 선택해 주세요'); return }
+  const arriveDate = adjustCallDate(addDays(regDate, 3)).date
+  const resvDate   = adjustCallDate(addDays(regDate, selectedDose===15 ? 13 : 27)).date
+  tangPts.push({ id:Date.now(), name, chart, dose:selectedDose, regDate, arriveDate, resvDate, arriveDone:false, resvDone:false })
+  saveTang()
+  showToast(`✓ ${name} 환자 등록 완료!`)
+  resetTangForm()
+  renderTangDash()
+}
+
+// ══════════════════════════════════════
+// 탕약 - 대시보드
+// ══════════════════════════════════════
+function renderTangDash() {
+  const active = tangPts.filter(p=>!p.arriveDone||!p.resvDone)
+  const total  = tangPts.length
+  const todayArrive = tangPts.filter(p=>!p.arriveDone && p.arriveDate===todayStr)
+  const todayResv   = tangPts.filter(p=>!p.resvDone   && p.resvDate===todayStr)
+
+  // alert banners
+  let alertHTML = ''
+  if (todayArrive.length) alertHTML += `<div class="alert-banner urgent">📦 <strong>오늘 도착 해피콜</strong> — ${todayArrive.map(p=>p.name).join(', ')} (${todayArrive.length}명)</div>`
+  if (todayResv.length)   alertHTML += `<div class="alert-banner">📅 <strong>오늘 예약 해피콜</strong> — ${todayResv.map(p=>p.name).join(', ')} (${todayResv.length}명)</div>`
+  document.getElementById('tangAlerts').innerHTML = alertHTML
+
+  // stats
+  const overdueArrive = tangPts.filter(p=>!p.arriveDone && p.arriveDate < todayStr).length
+  const overdueResv   = tangPts.filter(p=>!p.resvDone   && p.resvDate   < todayStr).length
+  document.getElementById('tangStatGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">전체 환자</div><div class="stat-value">${total}</div><div class="stat-sub">명 누적</div></div>
+    <div class="stat-card"><div class="stat-label">진행 중</div><div class="stat-value" style="color:var(--teal)">${active.length}</div><div class="stat-sub">명</div></div>
+    <div class="stat-card"><div class="stat-label">오늘 해피콜</div><div class="stat-value" style="color:var(--amber)">${todayArrive.length+todayResv.length}</div><div class="stat-sub">건</div></div>
+    <div class="stat-card"><div class="stat-label">미처리 해피콜</div><div class="stat-value" style="color:#e05555">${overdueArrive+overdueResv}</div><div class="stat-sub">건</div></div>`
+
+  // active list
+  const sorted = [...active].sort((a,b)=>{
+    const aNext = !a.arriveDone ? a.arriveDate : a.resvDate
+    const bNext = !b.arriveDone ? b.arriveDate : b.resvDate
+    return aNext < bNext ? -1 : 1
+  })
+  document.getElementById('tangActivelist').innerHTML = sorted.length
+    ? sorted.map(p => tangActiveRow(p)).join('')
+    : '<div style="color:var(--subtle);font-size:13px;padding:12px 0;">진행 중인 환자가 없습니다</div>'
+}
+
+function tangActiveRow(p) {
+  const arriveDd = ddayLabel(p.arriveDate)
+  const resvDd   = ddayLabel(p.resvDate)
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f8;flex-wrap:wrap;">
+    <div style="min-width:70px;font-weight:700;font-size:13px;">${p.name}</div>
+    <div style="font-size:11px;color:var(--muted);min-width:60px;">차트 ${p.chart}</div>
+    <span class="dose-tag ${p.dose===15?'dose-15':'dose-30'}">${p.dose}일분</span>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
+      ${!p.arriveDone ? `<span style="font-size:11px;">📦 ${formatDateKo(p.arriveDate)}</span>
+        <span class="call-dday ${arriveDd.cls}">${arriveDd.label}</span>
+        <button class="btn-done" onclick="markDone(${p.id},'arrive')">완료</button>` :
+        '<span style="font-size:11px;color:#aaa;">📦 도착 완료</span>'}
+      &nbsp;
+      ${!p.resvDone ? `<span style="font-size:11px;">📅 ${formatDateKo(p.resvDate)}</span>
+        <span class="call-dday ${resvDd.cls}">${resvDd.label}</span>
+        <button class="btn-done" onclick="markDone(${p.id},'resv')">완료</button>` :
+        '<span style="font-size:11px;color:#aaa;">📅 예약 완료</span>'}
+    </div>
+  </div>`
+}
+
+function markDone(id, type) {
+  const numId = Number(id)
+  const p = tangPts.find(t=>Number(t.id)===numId)
+  if (!p) return
+  if (type==='arrive') p.arriveDone = true
+  if (type==='resv')   p.resvDone   = true
+  saveTang(); renderTangDash(); renderTangList()
+  showToast(`✓ ${p.name} ${type==='arrive'?'도착':'예약'} 해피콜 완료 처리!`)
+}
+function deleteTang(id) {
+  const numId = Number(id)
+  tangPts = tangPts.filter(p=>Number(p.id)!==numId)
+  saveTang(); renderTangList(); renderTangDash()
+  showToast('삭제되었습니다')
+}
+
+// ══════════════════════════════════════
+// 탕약 - 목록
+// ══════════════════════════════════════
+function renderTangList() {
+  const sel = document.getElementById('tangStatusFilter').value
+  let filtered = [...tangPts]
+  if (sel==='active') filtered = filtered.filter(p=>!p.arriveDone||!p.resvDone)
+  if (sel==='done')   filtered = filtered.filter(p=> p.arriveDone && p.resvDone)
+  const sorted = filtered.sort((a,b)=>b.id-a.id)
+  const tbody=document.getElementById('tangListBody'), empty=document.getElementById('tangListEmpty')
+  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return }
+  empty.style.display='none'
+  tbody.innerHTML = sorted.map((p,i)=>{
+    const isDone = p.arriveDone && p.resvDone
+    const ad = ddayLabel(p.arriveDate), rd = ddayLabel(p.resvDate)
+    return `<tr class="${isDone?'done-row':''}">
+      <td class="td-num">${sorted.length-i}</td>
+      <td class="td-name">${p.name}</td>
+      <td class="td-chart">${p.chart}</td>
+      <td><span class="dose-tag ${p.dose===15?'dose-15':'dose-30'}">${p.dose}일분</span></td>
+      <td class="td-date">${p.regDate}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span class="td-date">${p.arriveDate}</span>
+          ${p.arriveDone ? '<span class="status-tag st-done">완료</span>' : `<span class="call-dday ${ad.cls}" style="font-size:10px;">${ad.label}</span>`}
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <span class="td-date">${p.resvDate}</span>
+          ${p.resvDone ? '<span class="status-tag st-done">완료</span>' : `<span class="call-dday ${rd.cls}" style="font-size:10px;">${rd.label}</span>`}
+        </div>
+      </td>
+      <td><span class="status-tag ${isDone?'st-done':'st-active'}">${isDone?'완료':'진행중'}</span></td>
+      <td><button class="btn-danger" onclick="deleteTang(${p.id})">삭제</button></td>
+    </tr>`
+  }).join('')
+}
+
+function exportTangCSV() {
+  const rows=[['번호','성함','차트번호','처방일수','등록일','도착해피콜일','도착완료','예약해피콜일','예약완료']]
+  const sorted=[...tangPts].sort((a,b)=>b.id-a.id)
+  sorted.forEach((p,i)=>rows.push([sorted.length-i,p.name,p.chart,p.dose+'일분',p.regDate,p.arriveDate,p.arriveDone?'완료':'미완료',p.resvDate,p.resvDone?'완료':'미완료']))
+  const csv=rows.map(r=>r.join(',')).join('\n')
+  const a=document.createElement('a')
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv)
+  a.download=`탕약환자_${todayStr}.csv`; a.click()
+  showToast('CSV 파일이 저장되었습니다')
+}
+
+function exportShinCSV() {
+  const rows=[['번호','내원경로','지인이름','협력업체','기타내용','등록일']]
+  const sorted=[...patients].sort((a,b)=>b.id-a.id)
+  sorted.forEach((p,i)=>rows.push([sorted.length-i, p.route, p.jiinName||'', p.partnerName||'', p.etcMemo||'', p.date]))
+  const csv=rows.map(r=>r.join(',')).join('\n')
+  const a=document.createElement('a')
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv)
+  a.download=`신환내원경로_${todayStr}.csv`; a.click()
+  showToast('CSV 파일이 저장되었습니다')
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function routeEmoji(r) { return {'간판':'🪧','인터넷':'🔍','블로그':'✍️','인스타':'📸','지인':'🤝','AI':'🤖','협력업체':'🏢','기타':'📌'}[r]||'📍' }
+
+// ══════════════════════════════════════
+// 지인 랭킹
+// ══════════════════════════════════════
+function renderJiinRanking() {
+  const jiinPts = patients.filter(p => p.route==='지인' && p.jiinName)
+  const cnt = {}
+  jiinPts.forEach(p => cnt[p.jiinName] = (cnt[p.jiinName]||0) + 1)
+  const ranked = Object.entries(cnt).sort((a,b)=>b[1]-a[1])
+  const total = jiinPts.length
+  const uniqueCount = ranked.length
+  document.getElementById('jiinStatGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">지인 소개 전체</div><div class="stat-value" style="color:var(--c-지인)">${total}</div><div class="stat-sub">명 누적</div></div>
+    <div class="stat-card"><div class="stat-label">소개자 수</div><div class="stat-value">${uniqueCount}</div><div class="stat-sub">명</div></div>
+    <div class="stat-card"><div class="stat-label">최다 소개자</div><div class="stat-value" style="font-size:16px;padding-top:4px;">${ranked[0]?ranked[0][0]:'-'}</div><div class="stat-sub">${ranked[0]?ranked[0][1]+'명 소개':''}</div></div>`
+  const maxCnt = ranked[0]?.[1] || 1
+  document.getElementById('jiinRankList').innerHTML = ranked.length
+    ? ranked.map(([name,n],i)=>`<div class="jiin-rank-item">
+        <div class="jiin-rank-num">${i+1}</div>
+        <div class="jiin-rank-name">${name}</div>
+        <div class="jiin-rank-bar-wrap"><div class="jiin-rank-bar" style="width:${Math.round(n/maxCnt*100)}%"></div></div>
+        <div class="jiin-rank-cnt">${n}명</div>
+      </div>`).join('')
+    : '<div style="color:var(--subtle);font-size:13px;padding:12px 0;">지인 소개 신환이 없습니다</div>'
+  const jiinSorted = [...jiinPts].sort((a,b)=>b.id-a.id)
+  const tbody = document.getElementById('jiinDetailBody'), empty = document.getElementById('jiinDetailEmpty')
+  if (!jiinSorted.length) { tbody.innerHTML=''; empty.style.display='block'; return }
+  empty.style.display='none'
+  tbody.innerHTML = jiinSorted.map((p,i)=>`<tr>
+    <td class="td-num">${jiinSorted.length-i}</td>
+    <td><span style="font-size:13px;font-weight:700;color:var(--c-지인);">🤝 ${p.jiinName}</span></td>
+    <td class="td-date">${p.date}</td>
+  </tr>`).join('')
+}
+
+// ══════════════════════════════════════
+// 협력업체 랭킹
+// ══════════════════════════════════════
+function renderPartnerRanking() {
+  const partnerPts = patients.filter(p => p.route==='협력업체' && p.partnerName)
+  const cnt = {}
+  partnerPts.forEach(p => cnt[p.partnerName] = (cnt[p.partnerName]||0) + 1)
+  const ranked = Object.entries(cnt).sort((a,b)=>b[1]-a[1])
+  const total = partnerPts.length
+  const uniqueCount = ranked.length
+  document.getElementById('partnerStatGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">협력업체 소개 전체</div><div class="stat-value" style="color:var(--c-협력업체)">${total}</div><div class="stat-sub">명 누적</div></div>
+    <div class="stat-card"><div class="stat-label">협력업체 수</div><div class="stat-value">${uniqueCount}</div><div class="stat-sub">곳</div></div>
+    <div class="stat-card"><div class="stat-label">최다 소개 업체</div><div class="stat-value" style="font-size:15px;padding-top:4px;">${ranked[0]?ranked[0][0]:'-'}</div><div class="stat-sub">${ranked[0]?ranked[0][1]+'명 소개':''}</div></div>`
+  const maxCnt = ranked[0]?.[1] || 1
+  document.getElementById('partnerRankList').innerHTML = ranked.length
+    ? ranked.map(([name,n],i)=>`<div class="partner-rank-item">
+        <div class="partner-rank-num">${i+1}</div>
+        <div class="partner-rank-name">🏢 ${name}</div>
+        <div class="partner-rank-bar-wrap"><div class="partner-rank-bar" style="width:${Math.round(n/maxCnt*100)}%"></div></div>
+        <div class="partner-rank-cnt">${n}명</div>
+      </div>`).join('')
+    : '<div style="color:var(--subtle);font-size:13px;padding:12px 0;">협력업체 소개 신환이 없습니다</div>'
+  const sorted = [...partnerPts].sort((a,b)=>b.id-a.id)
+  const tbody = document.getElementById('partnerDetailBody'), empty = document.getElementById('partnerDetailEmpty')
+  if (!sorted.length) { tbody.innerHTML=''; empty.style.display='block'; return }
+  empty.style.display='none'
+  tbody.innerHTML = sorted.map((p,i)=>`<tr>
+    <td class="td-num">${sorted.length-i}</td>
+    <td><span style="font-size:13px;font-weight:700;color:var(--c-협력업체);">🏢 ${p.partnerName}</span></td>
+    <td class="td-date">${p.date}</td>
+  </tr>`).join('')
+}
+// ══════════════════════════════════════
+// 화분 관리
+// ══════════════════════════════════════
+function togglePlantForm() {
+  const form = document.getElementById('plantRegForm')
+  const visible = form.style.display !== 'none'
+  form.style.display = visible ? 'none' : 'block'
+  if (!visible) { document.getElementById('plantNameInput').focus() }
+  else { resetPlantForm() }
+}
+function selectCycle(n) {
+  selectedCycle = n
+  document.querySelectorAll('.cycle-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.textContent) === n || (n===60 && b.textContent==='2개월'))
+  })
+}
+function resetPlantForm() {
+  document.getElementById('plantNameInput').value = ''
+  selectedCycle = null
+  document.querySelectorAll('.cycle-btn').forEach(b => b.classList.remove('selected'))
+}
+function registerPlant() {
+  const name = document.getElementById('plantNameInput').value.trim()
+  if (!name)         { showToast('화분 이름을 입력해 주세요'); return }
+  if (!selectedCycle){ showToast('물주기 주기를 선택해 주세요'); return }
+  plants.push({
+    id: Date.now(),
+    name,
+    cycle: selectedCycle,
+    lastWatered: todayStr,
+    registeredDate: todayStr
+  })
+  savePlants()
+  showToast(`🪴 ${name} 등록 완료! (${selectedCycle===60?'2개월':selectedCycle+'일'}마다 물주기)`)
+  resetPlantForm()
+  document.getElementById('plantRegForm').style.display = 'none'
+  renderPlants()
+}
+function waterPlant(id) {
+  const p = plants.find(p => Number(p.id) === Number(id))
+  if (!p) return
+  p.lastWatered = todayStr
+  savePlants()
+  renderPlants()
+  showToast(`💧 ${p.name} 물 줬음 처리 완료!`)
+}
+function deletePlant(id) {
+  plants = plants.filter(p => Number(p.id) !== Number(id))
+  savePlants()
+  renderPlants()
+  showToast('화분이 삭제되었습니다')
+}
+function getPlantStatus(p) {
+  const last  = new Date(p.lastWatered)
+  const today = new Date(todayStr)
+  const daysPassed = Math.floor((today - last) / (1000*60*60*24))
+  const daysLeft   = p.cycle - daysPassed
+  if (daysLeft > 0)  return { type:'ok',     label:'양호',   daysPassed, daysLeft }
+  if (daysLeft >= -3) return { type:'water',  label:'물 필요', daysPassed, daysLeft }
+  return               { type:'urgent', label:'🚨 긴급',  daysPassed, daysLeft }
+}
+function cycleName(n) { return n === 60 ? '2개월(60일)' : n+'일' }
+function renderPlants() {
+  const grid      = document.getElementById('plantGrid')
+  const empty     = document.getElementById('plantEmpty')
+  const listWrap  = document.getElementById('plantListWrap')
+  const alerts    = document.getElementById('plantAlerts')
+
+  if (!plants.length) {
+    grid.innerHTML = ''
+    listWrap.style.display = 'none'
+    empty.style.display = 'block'
+    alerts.innerHTML = ''
+    return
+  }
+  empty.style.display  = 'none'
+  listWrap.style.display = 'block'
+
+  // 알림 배너
+  const urgents = plants.filter(p => getPlantStatus(p).type === 'urgent')
+  const waters  = plants.filter(p => getPlantStatus(p).type === 'water')
+  let alertHTML = ''
+  if (urgents.length) alertHTML += `<div class="alert-banner urgent">🚨 <strong>긴급 물주기 필요</strong> — ${urgents.map(p=>p.name).join(', ')}</div>`
+  if (waters.length)  alertHTML += `<div class="alert-banner">💧 <strong>물주기 시기</strong> — ${waters.map(p=>p.name).join(', ')}</div>`
+  alerts.innerHTML = alertHTML
+
+  // 정렬: 긴급 → 물필요 → 양호
+  const order = { urgent:0, water:1, ok:2 }
+  const sorted = [...plants].sort((a,b) => order[getPlantStatus(a).type] - order[getPlantStatus(b).type])
+
+  // 식물 아이콘 (이름 기반으로 다양하게)
+  function plantIcon(name) {
+    const icons = ['🪴','🌿','🌱','🌵','🎋','🍃','🌾','🌺','🌸','🌻']
+    let hash = 0; for (const c of name) hash += c.charCodeAt(0)
+    return icons[hash % icons.length]
+  }
+
+  grid.innerHTML = sorted.map(p => {
+    const st = getPlantStatus(p)
+    const badgeCls = st.type==='ok' ? 'psb-ok' : st.type==='water' ? 'psb-water' : 'psb-urgent'
+    const nextWater = addDays(p.lastWatered, p.cycle)
+    const daysLeftTxt = st.daysLeft > 0
+      ? `${cycleName(p.cycle)} 주기 · ${st.daysLeft}일 후`
+      : st.daysLeft === 0 ? `${cycleName(p.cycle)} 주기 · 오늘`
+      : `${cycleName(p.cycle)} 주기 · ${Math.abs(st.daysLeft)}일 초과`
+
+    return `<div class="plant-card ${st.type==='ok'?'status-ok':st.type==='water'?'status-water':'status-urgent'}">
+      <div class="plant-icon">${plantIcon(p.name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="plant-name">${p.name}</div>
+        <div class="plant-meta-small">${daysLeftTxt}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="plant-status-badge ${badgeCls}">${st.label}</span>
+        ${st.type !== 'ok' ? `<button class="btn-watered" onclick="waterPlant(${p.id})">💧 물 줬음</button>` : ''}
+        <button class="btn-plant-del" onclick="deletePlant(${p.id})" title="삭제">✕</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ══════════════════════════════════════
+// HOME GRID
+// ══════════════════════════════════════
+function renderHome() {
+  const d = new Date()
+  const DAYS_FULL = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+  const MONTHS = ['1','2','3','4','5','6','7','8','9','10','11','12']
+
+  // Today 카드
+  document.getElementById('hTodayDate').textContent = `${d.getFullYear()}년 ${MONTHS[d.getMonth()]}월 ${d.getDate()}일`
+  document.getElementById('hTodayDow').textContent  = DAYS_FULL[d.getDay()]
+
+  // 오늘 탕약 해피콜
+  const todayArrive = tangPts.filter(p=>!p.arriveDone&&p.arriveDate===todayStr)
+  const todayResv   = tangPts.filter(p=>!p.resvDone  &&p.resvDate===todayStr)
+  let todayHTML = ''
+  if (todayArrive.length||todayResv.length) {
+    todayArrive.forEach(p=>{ todayHTML+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fff8f0;margin-bottom:5px;border-left:3px solid #e07030;"><span style="font-size:12px;color:#e07030;font-weight:700;">📦 도착</span><span style="font-size:12px;">${p.name}</span></div>` })
+    todayResv.forEach(p=>{ todayHTML+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#e8f5e9;margin-bottom:5px;border-left:3px solid #388e3c;"><span style="font-size:12px;color:#388e3c;font-weight:700;">📅 예약</span><span style="font-size:12px;">${p.name}</span></div>` })
+  } else {
+    todayHTML = '<div style="color:var(--subtle);font-size:12px;padding:8px 0;">오늘 해피콜 없음</div>'
+  }
+  document.getElementById('hTodayContent').innerHTML = `<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;">탕약 해피콜</div>${todayHTML}`
+
+  // 신환 내원경로 카드 (이번달)
+  const thisMonth = todayStr.slice(0,7)
+  const monthly = patients.filter(p=>p.date.startsWith(thisMonth))
+  const cnt={}; ROUTES.forEach(r=>cnt[r]=0); monthly.forEach(p=>cnt[p.route]=(cnt[p.route]||0)+1)
+  const total2 = monthly.length||1
+  const routeHTML = monthly.length
+    ? ROUTES.filter(r=>cnt[r]>0).map(r=>`
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:${ROUTE_COLORS[r]};flex-shrink:0;display:inline-block;"></span>
+          <span style="flex:1;color:var(--muted);">${r}</span>
+          <span style="font-weight:700;color:var(--text);">${cnt[r]}명</span>
+          <span style="color:var(--subtle);">${Math.round(cnt[r]/total2*100)}%</span>
+        </div>`).join('')
+    : '<div style="color:var(--subtle);font-size:12px;padding:20px 0;text-align:center;">이번 달 신환 데이터 없음</div>'
+  document.getElementById('hRouteContent').innerHTML = routeHTML
+
+  // 탕약 카드
+  const activeTang = tangPts.filter(p=>!p.arriveDone||!p.resvDone)
+  document.getElementById('hTangContent').innerHTML = activeTang.length
+    ? activeTang.slice(0,4).map(p=>{
+        const ad=ddayLabel(p.arriveDate), rd=ddayLabel(p.resvDate)
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f8;font-size:12px;">
+          <span style="font-weight:600;">${p.name}</span>
+          <span style="display:flex;gap:4px;">
+            ${!p.arriveDone?`<span class="call-dday ${ad.cls}" style="font-size:10px;">${ad.label}</span>`:''}
+            ${!p.resvDone?`<span class="call-dday ${rd.cls}" style="font-size:10px;">${rd.label}</span>`:''}
+          </span>
+        </div>`}).join('')
+    : '<div style="color:var(--subtle);font-size:12px;display:flex;align-items:center;gap:6px;padding:4px 0;"><span style="color:#ddd;font-size:16px;">—</span> 진행중인 처방 없음</div>'
+
+  // 화분 카드
+  const plantProbs = plants.filter(p=>getPlantStatus(p).type!=='ok')
+  document.getElementById('hPlantContent').innerHTML = plants.length
+    ? plants.map(p=>{
+        const st=getPlantStatus(p)
+        const bdg = st.type==='ok'?'psb-ok':st.type==='water'?'psb-water':'psb-urgent'
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f8;">
+          <span style="font-size:13px;">${plantIcon(p.name)} ${p.name}</span>
+          <span class="plant-status-badge ${bdg}">${st.label}</span>
+        </div>`}).join('')
+    : '<div style="color:var(--subtle);font-size:12px;padding:8px 0;">등록된 화분 없음</div>'
+
+  // 공지 카드
+  renderNotices()
+}
+
+function plantIcon(name) {
+  const icons=['🪴','🌿','🌱','🌵','🎋','🍃','🌾','🌺','🌸','🌻']
+  let hash=0; for(const c of name) hash+=c.charCodeAt(0)
+  return icons[hash%icons.length]
+}
+
+function postNotice2() {
+  const el = document.getElementById('noticeInput2')
+  if (!el) return
+  const content = el.value.trim()
+  if (!content) { showToast('공지 내용을 입력해 주세요'); return }
+  const d = new Date()
+  notices.unshift({ id:Date.now(), content, createdAt:d.toISOString(), device:getDeviceId(), read:false })
+  saveNotices(); el.value=''
+  renderNotices(); renderNoticeLogs()
+  showToast('📢 공지사항이 등록되었습니다')
+}
+
+// ══════════════════════════════════════
+// TODAY (상세 페이지용 - 현재 미사용)
+// ══════════════════════════════════════
+function renderToday() {
+  renderNotices()
+  renderNoticeLogs()
+}
+
+// ══════════════════════════════════════
+// 공지사항
+// ══════════════════════════════════════
+function getDeviceId() {
+  let id = localStorage.getItem('device_id')
+  if (!id) {
+    const ua = navigator.userAgent
+    const os = ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'Mac' : ua.includes('Linux') ? 'Linux' : '기기'
+    const rand = Math.random().toString(36).slice(2,6).toUpperCase()
+    id = `${os}-${rand}`
+    localStorage.setItem('device_id', id)
+  }
+  return id
+}
+
+function postNotice() {
+  const content = document.getElementById('noticeInput').value.trim()
+  if (!content) { showToast('공지 내용을 입력해 주세요'); return }
+  const d = new Date()
+  notices.unshift({
+    id: Date.now(),
+    content,
+    createdAt: d.toISOString(),
+    device: getDeviceId(),
+    read: false
+  })
+  saveNotices()
+  document.getElementById('noticeInput').value = ''
+  renderNotices()
+  showToast('📢 공지사항이 등록되었습니다')
+}
+
+function deleteNotice(id) {
+  const numId = Number(id)
+  const notice = notices.find(n => Number(n.id) === numId)
+  if (!notice) return
+
+  // 로그 기록
+  const d = new Date()
+  noticeLogs.unshift({
+    id: Date.now(),
+    deletedAt: d.toISOString(),
+    device: getDeviceId(),
+    content: notice.content.slice(0, 60) + (notice.content.length > 60 ? '…' : ''),
+    originalCreatedAt: notice.createdAt
+  })
+  saveLogs()
+
+  notices = notices.filter(n => Number(n.id) !== numId)
+  saveNotices()
+  renderNotices()
+  renderNoticeLogs()
+  showToast('공지사항이 삭제되었습니다')
+}
+
+function markNoticeRead(id) {
+  const n = notices.find(n => Number(n.id) === Number(id))
+  if (n) { n.read = true; saveNotices(); renderNotices() }
+}
+
+function renderNotices() {
+  const list  = document.getElementById('noticeList')
+  if (!list) return
+  const count = document.getElementById('noticeCountBadge')
+  const unread = notices.filter(n=>!n.read).length
+  if (count) {
+    count.textContent = notices.length
+    count.style.background = unread > 0 ? 'var(--pink)' : '#eee'
+    count.style.color      = unread > 0 ? 'white' : '#aaa'
+  }
+
+  if (!notices.length) {
+    list.innerHTML = '<div class="notice-empty">등록된 공지사항이 없습니다</div>'
+    return
+  }
+
+  list.innerHTML = notices.map((n, i) => {
+    const d = new Date(n.createdAt)
+    const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`
+    const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+    return `<div class="notice-item ${!n.read?'unread':''}" onclick="markNoticeRead(${n.id})">
+      <div class="notice-num">${notices.length - i}</div>
+      <div class="notice-body">
+        <div class="notice-content">${escHtml(n.content)}</div>
+        <div class="notice-meta">
+          ${!n.read ? '<span class="notice-new-badge">NEW</span>' : ''}
+          <span>${dateStr} ${timeStr}</span>
+          <span style="color:#ddd;">·</span>
+          <span>${n.device}</span>
+        </div>
+      </div>
+      <button class="btn-notice-del" onclick="event.stopPropagation();deleteNotice(${n.id})" title="삭제">✕</button>
+    </div>`
+  }).join('')
+}
+
+function renderNoticeLogs() {
+  const logList = document.getElementById('noticeLogList')
+  if (!logList) return
+  if (!noticeLogs.length) {
+    logList.innerHTML = '<div class="log-empty">삭제 내역이 없습니다</div>'
+    return
+  }
+  logList.innerHTML = noticeLogs.map(l => {
+    const d = new Date(l.deletedAt)
+    const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`
+    const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`
+    const autoDelete = new Date(l.deletedAt); autoDelete.setMonth(autoDelete.getMonth()+3)
+    const autoStr = `${autoDelete.getFullYear()}.${String(autoDelete.getMonth()+1).padStart(2,'0')}.${String(autoDelete.getDate()).padStart(2,'0')} 자동삭제 예정`
+    return `<div class="log-item">
+      <div class="log-time">${dateStr}<br>${timeStr}</div>
+      <div class="log-body">
+        <div style="margin-bottom:3px;">"${escHtml(l.content)}"</div>
+        <div class="log-device">🖥 ${l.device} · ${autoStr}</div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show')
+  setTimeout(()=>t.classList.remove('show'),2500)
+}
+
+
+</script>
+</body>
+</html>
