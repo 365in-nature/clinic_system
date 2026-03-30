@@ -772,6 +772,14 @@ tbody td { padding:10px 14px; vertical-align:middle; }
       </div>
     </div>
     <div class="field" style="margin-bottom:14px;">
+      <label class="field-label">치료 기간 (선택)</label>
+      <div class="dose-row" style="margin-top:6px;">
+        <button class="dose-btn" id="period3m" onclick="selectPeriod('3개월')">🗓️ 3개월</button>
+        <button class="dose-btn" id="period6m" onclick="selectPeriod('6개월')">📅 6개월</button>
+        <button class="dose-btn" id="periodNone" onclick="selectPeriod(null)" style="flex:0.6;font-size:12px;">선택 안함</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;">
       <label class="field-label">등록일 (기본: 오늘)</label>
       <input type="date" class="field-input" id="tRegDate" oninput="updateCallPreview()">
     </div>
@@ -977,10 +985,11 @@ let plants     = []
 let notices    = []
 let noticeLogs = []
 let visitData  = {}   // { 'YYYY-MM-DD': { reserved: N, visited: N } }
-let selectedRoute = null
-let modalRoute    = null
-let selectedDose  = null
-let selectedCycle = null
+let selectedRoute  = null
+let modalRoute     = null
+let selectedDose   = null
+let selectedCycle  = null
+let selectedPeriod = null
 let charts = {}
 
 const now = new Date()
@@ -1410,6 +1419,12 @@ function initTangForm() {
   document.getElementById('tRegDate').value = todayStr
   updateCallPreview()
 }
+function selectPeriod(val) {
+  selectedPeriod = val
+  document.getElementById('period3m').classList.toggle('selected', val==='3개월')
+  document.getElementById('period6m').classList.toggle('selected', val==='6개월')
+  document.getElementById('periodNone').classList.toggle('selected', val===null)
+}
 function selectDose(n) {
   selectedDose = n
   document.getElementById('dose15').classList.toggle('selected', n===15)
@@ -1448,8 +1463,12 @@ function resetTangForm() {
   document.getElementById('tChart').value = ''
   document.getElementById('tRegDate').value = todayStr
   selectedDose = null
+  selectedPeriod = null
   document.getElementById('dose15').classList.remove('selected')
   document.getElementById('dose30').classList.remove('selected')
+  document.getElementById('period3m').classList.remove('selected')
+  document.getElementById('period6m').classList.remove('selected')
+  document.getElementById('periodNone').classList.remove('selected')
   document.getElementById('callPreview').classList.remove('show')
 }
 function registerTang() {
@@ -1461,7 +1480,7 @@ function registerTang() {
   if (!selectedDose) { showToast('처방 일수를 선택해 주세요'); return }
   const arriveDate = adjustCallDate(addDays(regDate, 3)).date
   const resvDate   = adjustCallDate(addDays(regDate, selectedDose===15 ? 13 : 27)).date
-  tangPts.push({ id:Date.now(), name, chart, dose:selectedDose, regDate, arriveDate, resvDate, arriveDone:false, resvDone:false })
+  tangPts.push({ id:Date.now(), name, chart, dose:selectedDose, period:selectedPeriod||null, regDate, arriveDate, resvDate, arriveDone:false, resvDone:false })
   saveTang()
   showToast(`✓ ${name} 환자 등록 완료!`)
   resetTangForm()
@@ -1479,8 +1498,8 @@ function renderTangDash() {
 
   // alert banners
   let alertHTML = ''
-  if (todayArrive.length) alertHTML += `<div class="alert-banner urgent">📦 <strong>오늘 도착 해피콜</strong> — ${todayArrive.map(p=>p.name).join(', ')} (${todayArrive.length}명)</div>`
-  if (todayResv.length)   alertHTML += `<div class="alert-banner">📅 <strong>오늘 예약 해피콜</strong> — ${todayResv.map(p=>p.name).join(', ')} (${todayResv.length}명)</div>`
+  if (todayArrive.length) alertHTML += `<div class="alert-banner urgent">📦 <strong>오늘 도착 해피콜</strong> — ${todayArrive.map(p=>p.name+(p.period?` (${p.period})`:'') ).join(', ')} (${todayArrive.length}명)</div>`
+  if (todayResv.length)   alertHTML += `<div class="alert-banner">📅 <strong>오늘 예약 해피콜</strong> — ${todayResv.map(p=>p.name+(p.period?` (${p.period})`:'') ).join(', ')} (${todayResv.length}명)</div>`
   document.getElementById('tangAlerts').innerHTML = alertHTML
 
   // stats
@@ -1507,7 +1526,7 @@ function tangActiveRow(p) {
   const arriveDd = ddayLabel(p.arriveDate)
   const resvDd   = ddayLabel(p.resvDate)
   return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f8;flex-wrap:wrap;">
-    <div style="min-width:70px;font-weight:700;font-size:13px;">${p.name}</div>
+    <div style="min-width:70px;font-weight:700;font-size:13px;">${p.name}${p.period ? `<span style="font-size:11px;font-weight:700;color:var(--teal);background:var(--teal-light);border-radius:8px;padding:1px 7px;margin-left:5px;">${p.period}</span>` : ''}</div>
     <div style="font-size:11px;color:var(--muted);min-width:60px;">차트 ${p.chart}</div>
     <span class="dose-tag ${p.dose===15?'dose-15':'dose-30'}">${p.dose}일분</span>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
@@ -1557,7 +1576,7 @@ function renderTangList() {
     const ad = ddayLabel(p.arriveDate), rd = ddayLabel(p.resvDate)
     return `<tr class="${isDone?'done-row':''}">
       <td class="td-num">${sorted.length-i}</td>
-      <td class="td-name">${p.name}</td>
+      <td class="td-name">${p.name}${p.period ? `<span style="font-size:11px;font-weight:700;color:var(--teal);background:var(--teal-light);border-radius:8px;padding:1px 7px;margin-left:5px;">${p.period}</span>` : ''}</td>
       <td class="td-chart">${p.chart}</td>
       <td><span class="dose-tag ${p.dose===15?'dose-15':'dose-30'}">${p.dose}일분</span></td>
       <td class="td-date">${p.regDate}</td>
@@ -1580,9 +1599,9 @@ function renderTangList() {
 }
 
 function exportTangCSV() {
-  const rows=[['번호','성함','차트번호','처방일수','등록일','도착해피콜일','도착완료','예약해피콜일','예약완료']]
+  const rows=[['번호','성함','치료기간','차트번호','처방일수','등록일','도착해피콜일','도착완료','예약해피콜일','예약완료']]
   const sorted=[...tangPts].sort((a,b)=>b.id-a.id)
-  sorted.forEach((p,i)=>rows.push([sorted.length-i,p.name,p.chart,p.dose+'일분',p.regDate,p.arriveDate,p.arriveDone?'완료':'미완료',p.resvDate,p.resvDone?'완료':'미완료']))
+  sorted.forEach((p,i)=>rows.push([sorted.length-i,p.name,p.period||'',p.chart,p.dose+'일분',p.regDate,p.arriveDate,p.arriveDone?'완료':'미완료',p.resvDate,p.resvDone?'완료':'미완료']))
   const csv=rows.map(r=>r.join(',')).join('\n')
   const a=document.createElement('a')
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv)
